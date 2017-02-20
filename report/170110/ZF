@@ -1,0 +1,65 @@
+
+
+
+Exp name: kitti_scale5_aspect3_hard_example
+
+Training with
+
+	hRng in [30, np.inf]
+	occLevel in [0, 1, 2]
+	truncRng in [0, 0.3]
+
+anchors are generated with
+
+	base: 16
+	scales: 2, 4, 8, 16, 32
+	ratios: 0.5, 1, 2
+
+Annotations
+
+	Pedestrian:	Pedestrian
+	Cyclist:	Cyclist
+	Car:		Car
+
+	[Not used]	Person_sitting, Van, Truck, Tram, Misc, DontCare
+
+
+Stepsize
+	
+	40k
+
+Dropout
+
+	0.8
+
+
+##########################################################################################
+
+10k
+---------------------------------------------
+|  Class      |  Easy  | Moderate  |  Hard  |
+---------------------------------------------
+| Car         | 0.74 |  0.55   | 0.45 |
+| Pedestrian  | 0.53 |  0.44   | 0.38 |
+| Cyclist     | 0.44 |  0.38   | 0.36 |
+---------------------------------------------
+
+20k
+---------------------------------------------
+|  Class      |  Easy  | Moderate  |  Hard  |
+---------------------------------------------
+| Car         | 0.80 |  0.58   | 0.49 |
+| Pedestrian  | 0.62 |  0.52   | 0.46 |
+| Cyclist     | 0.58 |  0.48   | 0.44 |
+---------------------------------------------
+
+
+110k
+---------------------------------------------
+|  Class      |  Easy  | Moderate  |  Hard  |
+---------------------------------------------
+| Car         | 0.87 |  0.69   | 0.52 |
+| Pedestrian  | 0.72 |  0.59   | 0.51 |
+| Cyclist     | 0.70 |  0.57   | 0.53 |
+---------------------------------------------
+

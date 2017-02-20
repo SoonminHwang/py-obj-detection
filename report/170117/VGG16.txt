@@ -1,0 +1,38 @@
+
+
+
+Exp name: kitti_datadriven_xy_ALL
+
+Training with
+
+	hRng in [25, np.inf]
+	occLevel in [0, 1, 2]
+	truncRng in [0, 0.5]
+
+anchors are generated with
+
+	data-driven (k=12)
+
+Annotations
+
+	All!
+
+	Pedestrian, Cyclist, Car, Person_sitting, Van, Truck, Tram, Misc
+
+
+Stepsize
+	
+	40k
+
+Dropout
+
+	0.8
+
+16k
+---------------------------------------------
+|  Class      |  Easy  | Moderate  |  Hard  |
+---------------------------------------------
+| Car         | 0.76 |  0.51   | 0.43 |
+| Pedestrian  | 0.50 |  0.42   | 0.39 |
+| Cyclist     | 0.49 |  0.36   | 0.35 |
+---------------------------------------------

@@ -1,0 +1,31 @@
+net: "models/kitti/AlexNet/faster_rcnn_end2end/trainval.prototxt"
+
+#base_lr: 0.001
+#base_lr: 0.01
+base_lr: 0.05
+lr_policy: "step"
+gamma: 0.1
+
+# 1 epoch = 6k images / 16 images per iter = 375 iters, 7500 iter = 40 epoch
+stepsize: 15000
+
+# 60 epoch
+#stepsize: 22500
+
+display: 5
+average_loss: 10
+momentum: 0.9
+weight_decay: 0.0005
+
+snapshot: 0
+snapshot_prefix: "alexnet_4cls_50data_anchor"
+iter_size: 16
+
+# test 10% (80 images / 1400 images) at every 0.04 epoch
+test_iter: 10
+test_interval: 15
+test_compute_loss: true
+
+# Max epoch: 100 epoch
+max_iter: 37500
+

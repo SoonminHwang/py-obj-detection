@@ -1,0 +1,3 @@
+[submodule "caffe-latest"]
+	path = caffe-latest
+	url = https://github.com/soonminhwang/caffe-latest
