@@ -56,6 +56,7 @@ class SolverWrapper(object):
             self.solver.net.copy_from(pretrained_model)
             if len(self.solver.test_nets) > 0:
                 self.solver.test_nets[0].copy_from(pretrained_model)
+                self.solver.test_nets[0].share_with(self.solver.net)
 
         self.solver_param = caffe_pb2.SolverParameter()
         with open(solver_prototxt, 'rt') as f:
@@ -67,18 +68,20 @@ class SolverWrapper(object):
 
     def visualize(self, net, filename):        
         
+        blobs_out = net.forward()
+
         im = net.blobs['data'].data[0].copy()
         im = im.transpose((1,2,0))  # ch x h x w -> h x w x ch
         im += cfg.PIXEL_MEANS
         im = im[:, :, (2, 1, 0)]
 
-        im_scale = cfg.TEST.SCALES        
+        im_scale = float(cfg.TEST.SCALES[0]) / float(min(im.shape[:2]))
 
         if cfg.TEST.HAS_RPN:
-            assert len(im_scale) == 1, "Only single-image batch implemented"
+            # assert len(im_scale) == 1, "Only single-image batch implemented"
             rois = net.blobs['rois'].data.copy()
             # unscale back to raw image space
-            boxes = rois[:, 1:5] / im_scale[0]
+            boxes = rois[:, 1:5] / im_scale
         elif cfg.DEDUP_BOXES > 0:
             raise NotImplementedError
             # When mapping from image ROIs to feature map ROIs, there's some aliasing
@@ -92,12 +95,20 @@ class SolverWrapper(object):
             # rois = net.blobs['rois'][index, :]
             # boxes = boxes[index, :]
 
-        # use softmax estimated probabilities
+        # use softmax estimated probabilities       
         scores = net.blobs['cls_score'].data.copy()
+        scores = np.exp(scores)
+        scores_sum = np.sum(scores, axis=1)[:,np.newaxis]
+        scores /= scores_sum
+
+        # scores = scores.max(axis=1)
+        # scores = blobs_out['cls_score']
 
         if cfg.TEST.BBOX_REG:
-            # Apply bounding-box regression deltas
+            # Apply bounding-box regression deltas            
             box_deltas = net.blobs['bbox_pred'].data.copy()
+            box_deltas = box_deltas * self.bbox_stds + self.bbox_means
+            # box_deltas = blobs_out['bbox_pred']
             pred_boxes = bbox_transform_inv(boxes, box_deltas)
             pred_boxes = clip_boxes(pred_boxes, im.shape)
         else:
@@ -112,7 +123,7 @@ class SolverWrapper(object):
 
         # Post-processing
         imdb = self.imdb
-        thresh = 0.05
+        thresh = 0.8
         
         clrs = sns.color_palette("Set2", imdb.num_classes)
         plt.figure(1, figsize=(15,10))
@@ -121,6 +132,7 @@ class SolverWrapper(object):
         plt.gca().axis('off')
 
         # skip j = 0, because it's the background class
+        n_det = 0
         for j in xrange(1, imdb.num_classes):
             inds = np.where(scores[:, j] > thresh)[0]
             cls_scores = scores[inds, j]
@@ -132,9 +144,10 @@ class SolverWrapper(object):
             # is relative small (e.g., < 10k)            
             keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=True)  
             cls_dets = cls_dets[keep, :]
-            
+            n_det += len(inds)
             self.vis_detections(imdb.classes[j], cls_dets, clrs[j])
             
+        plt.title('%d objects are detected.' % n_det)
         plt.gca().legend()
         plt.savefig(filename)
 
@@ -154,7 +167,7 @@ class SolverWrapper(object):
                                   edgecolor=clr, linewidth=2.5, label=class_name)                    
                     )
                 axe.text(bbox[0], bbox[1]-2, '{:.3f}'.format(score), 
-                    bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='white')
+                    bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='w')
                 
                 # plt.title('{}  {:.3f}'.format(class_name, score))
                 # plt.show()
@@ -185,11 +198,8 @@ class SolverWrapper(object):
         infix = ('_' + cfg.TRAIN.SNAPSHOT_INFIX
                  if cfg.TRAIN.SNAPSHOT_INFIX != '' else '')
         filename = (self.solver_param.snapshot_prefix + infix +
-                    '_iter_{:d}'.format(self.solver.iter) + '.png')
-        
-        # Visualize!
-        self.visualize(net, filename)
-
+                    '_iter_{:d}'.format(self.solver.iter) + '.pkl')
+                
         # caffemodel
         # net.save(str(filename))
         # print 'Wrote snapshot to: {:s}'.format(filename)
@@ -198,15 +208,17 @@ class SolverWrapper(object):
         self.solver.snapshot()
 
         # save original unnormalized params
-        bbox_pred = {'0': orig_0, '1': orig_1}
-        filename = filename.replace('.png', '.pkl')
+        bbox_pred = {'0': orig_0, '1': orig_1}        
         with open(filename, 'wb') as fid:
             cPickle.dump(bbox_pred, fid, cPickle.HIGHEST_PROTOCOL)        
                 
+        filename = filename.replace('.pkl', '.png')
+
         if scale_bbox_params:
             # restore net to original state
             net.params['bbox_pred'][0].data[...] = orig_0
             net.params['bbox_pred'][1].data[...] = orig_1
+
         return filename
 
     def train_model(self, max_iters):
@@ -226,6 +238,8 @@ class SolverWrapper(object):
                 last_snapshot_iter = self.solver.iter
                 filename = self.snapshot()
                 model_paths.append(filename)
+                # Visualize!                
+                self.visualize(self.solver.test_nets[0], filename)
                 
         if last_snapshot_iter != self.solver.iter:
             model_paths.append(self.snapshot())

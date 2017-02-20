@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/rcvlab/anaconda2/bin/python
 
 # --------------------------------------------------------
 # Faster R-CNN
@@ -117,8 +117,10 @@ if __name__ == '__main__':
 
     args = parse_args()
 
+    # prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
+    #                         'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
     prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
-                            'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
+                            'faster_rcnn_end2end', 'test.prototxt')
     caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
                               NETS[args.demo_net][1])
 
@@ -147,5 +149,6 @@ if __name__ == '__main__':
         print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         print 'Demo for data/demo/{}'.format(im_name)
         demo(net, im_name)
+        plt.savefig(im_name)
 
     plt.show()

@@ -114,7 +114,7 @@ exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
 echo Copy .cfg "&" .prototxt "&" evaluation script files
-cp ./tools/eval_kitti.py $DST_DIR
+cp "./tools/eval_${DB_NAME}.py" $DST_DIR
 cp ./tools/kitti_evaluate_object.py $DST_DIR
 #cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/solver.prototxt "${DST_DIR}/models"
 cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/trainval.prototxt "${DST_DIR}/models"
