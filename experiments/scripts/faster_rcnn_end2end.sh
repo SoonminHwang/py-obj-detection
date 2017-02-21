@@ -30,7 +30,7 @@ case $DATASET in
     TRAIN_IMDB="kaistv2_2015_train01"
     TEST_IMDB="kaistv2_2015_test20"
     PT_DIR="kaistv2"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end_kaistv2.yml"    
+    CONFIG="faster_rcnn_end2end_kaistv2.yml"    
     #ITERS=150000
     ;;    
   kaist)
@@ -39,7 +39,7 @@ case $DATASET in
     TRAIN_IMDB="kaist_2015_train01"
     TEST_IMDB="kaist_2015_test20"
     PT_DIR="kaist"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end_kaist.yml"    
+    CONFIG="faster_rcnn_end2end_kaist.yml"    
     #ITERS=150000
     ;;
   kitti_trainval)
@@ -47,7 +47,7 @@ case $DATASET in
     TRAIN_IMDB="kitti_2012_trainval"
     TEST_IMDB="kitti_2012_val"
     PT_DIR="kitti"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end_kitti.yml"
+    CONFIG="faster_rcnn_end2end_kitti.yml"
     #ITERS=100000
     ;;
   kitti)
@@ -55,7 +55,7 @@ case $DATASET in
     TRAIN_IMDB="kitti_2012_train"
     TEST_IMDB="kitti_2012_val"
     PT_DIR="kitti"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end_kitti_${NET}.yml"
+    CONFIG="faster_rcnn_end2end_kitti_${NET}.yml"
     #ITERS=450000   # For AlexNet
     #ITERS=20000
     #ITERS=150000
@@ -65,7 +65,7 @@ case $DATASET in
     TRAIN_IMDB="voc_2007_trainval+voc_2012_trainval"
     TEST_IMDB="voc_2012_test"
     PT_DIR="pascal_voc"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end.yml"
+    CONFIG="faster_rcnn_end2end.yml"
     #ITERS=100000
     ;;
   pascal_voc)
@@ -73,7 +73,7 @@ case $DATASET in
     TRAIN_IMDB="voc_2007_trainval"
     TEST_IMDB="voc_2007_test"
     PT_DIR="pascal_voc"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end_voc07_${NET}.yml"
+    CONFIG="faster_rcnn_end2end_voc07_${NET}.yml"
     #ITERS=70000
     ;;
   coco14_trainval)
@@ -84,7 +84,7 @@ case $DATASET in
     TRAIN_IMDB="coco_2014_train+coco_2014_val"
     TEST_IMDB="coco_2015_test"
     PT_DIR="coco14_trainval"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end.yml"
+    CONFIG="faster_rcnn_end2end.yml"
     #ITERS=70000
     ;;
   coco)
@@ -95,7 +95,7 @@ case $DATASET in
     TRAIN_IMDB="coco_2014_train"
     TEST_IMDB="coco_2014_minival"
     PT_DIR="coco"
-    CONFIG="experiments/cfgs/faster_rcnn_end2end.yml"
+    CONFIG="faster_rcnn_end2end.yml"
     #ITERS=490000
     ;;
   *)
@@ -119,7 +119,7 @@ cp ./tools/kitti_evaluate_object.py $DST_DIR
 #cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/solver.prototxt "${DST_DIR}/models"
 cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/trainval.prototxt "${DST_DIR}/models"
 cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/test.prototxt "${DST_DIR}/models"
-cp $CONFIG $DST_DIR
+cp "experiments/cfgs/${CONFIG}" $DST_DIR
 
 
 time ./tools/train_net.py --gpu ${GPU_ID} \
@@ -130,9 +130,10 @@ time ./tools/train_net.py --gpu ${GPU_ID} \
   --log_dir ${DST_DIR} \
   --rand \
 #  --set ${EXTRA_ARGS}
-# --solver models/${PT_DIR}/${NET}/faster_rcnn_end2end/solver.prototxt \
 set +x
-NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`
+#NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`
+NET_FINAL=`grep -B 2 "done solving" ${LOG} | grep "Snapshotting to binary proto file" | awk '{print $10}'`
+ITER_FINAL=`grep "experiments" ${NET_FINAL} | awk 'BEGIN {FS="/"}{print $6}' | awk 'BEGIN {FS="."}{print $1}'` 
 set -x
 
 
@@ -143,8 +144,9 @@ case $DATASET in
      --iter ${ITERS}
  *)
    time ./tools/test_net.py --gpu ${GPU_ID} \
-     --def models/${PT_DIR}/${NET}/faster_rcnn_end2end/test.prototxt \
+     --def "${DST_DIR}/models/test.prototxt" \
      --net ${NET_FINAL} \
      --imdb ${TEST_IMDB} \
-     --cfg ${CONFIG} \
+     --cfg "${DST_DIR}/${CONFIG}" \
+     --output_dir "${DST_DIR}/results/${ITER_FINAL}/"
      ${EXTRA_ARGS}

@@ -224,7 +224,7 @@ def apply_nms(all_boxes, thresh):
             nms_boxes[cls_ind][im_ind] = dets[keep, :].copy()
     return nms_boxes
 
-def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
+def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=None):
     """Test a Fast R-CNN network on an image database."""
     num_images = len(imdb.image_index)
     # all detections are collected into:
@@ -233,7 +233,10 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
     all_boxes = [[[] for _ in xrange(num_images)]
                  for _ in xrange(imdb.num_classes)]
 
-    output_dir = get_output_dir(imdb, net)
+    if output_dir is None:
+        output_dir = get_output_dir(imdb, net)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     # timers
     _t = {'im_detect' : Timer(), 'misc' : Timer()}
