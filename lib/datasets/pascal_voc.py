@@ -276,6 +276,8 @@ class pascal_voc(imdb):
         print 'VOC07 metric? ' + ('Yes' if use_07_metric else 'No')
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
+
+        result_summary = open( os.path.join(output_dir, 'summary.txt'), 'w' )
         for i, cls in enumerate(self._classes):
             if cls == '__background__':
                 continue
@@ -285,8 +287,13 @@ class pascal_voc(imdb):
                 use_07_metric=use_07_metric)
             aps += [ap]
             print('AP for {} = {:.4f}'.format(cls, ap))
+            result_summary.write('AP for {} = {:.4f}\n'.format(cls, ap))
             with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:
                 cPickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
+
+        result_summary.write('Mean AP = {:.4f}'.format(np.mean(aps)))
+        result_summary.close()
+
         print('Mean AP = {:.4f}'.format(np.mean(aps)))
         print('~~~~~~~~')
         print('Results:')

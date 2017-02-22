@@ -48,6 +48,7 @@ import seaborn as sns
 
 import ipdb
 
+global CLASSES
 # CLASSES = ()
 #CLASSES = ('__background__', 'Pedestrian', 'Cyclist', 'Car')
 #CONF_THRESH = 0.8

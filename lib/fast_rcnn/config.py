@@ -77,6 +77,11 @@ __C.TRAIN.USE_AUGMENTATION.FLIP = True
 __C.TRAIN.USE_AUGMENTATION.CROP = False
 __C.TRAIN.USE_AUGMENTATION.GAMMA = False
 
+# __C.TRAIN.JITTER_NUM = 10
+# __C.TRAIN.JITTER_SCALE = (0.9, 1.1)
+# __C.TRAIN.JITTER_SHIFT = (0, 0.1)
+__C.TRAIN.SCALE_RNG = (0.85, 0.95)
+__C.TRAIN.GAMMA_RNG = (0.8, 1.2)
 
 # Scales to use during training (can list multiple scales)
 # Each scale is the pixel size of an image's shortest side
@@ -139,7 +144,8 @@ __C.TRAIN.PROPOSAL_METHOD = 'selective_search'
 # Make minibatches from images that have similar aspect ratios (i.e. both
 # tall and thin or both short and wide) in order to avoid wasting computation
 # on zero-padding.
-__C.TRAIN.ASPECT_GROUPING = True
+#__C.TRAIN.ASPECT_GROUPING = True
+__C.TRAIN.ASPECT_GROUPING = False
 
 # Use RPN to detect objects
 __C.TRAIN.HAS_RPN = False

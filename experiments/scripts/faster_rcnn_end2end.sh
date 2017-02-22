@@ -126,7 +126,7 @@ time ./tools/train_net.py --gpu ${GPU_ID} \
   --weights data/imagenet_models/${NET}.v2.caffemodel \
   --imdb_train ${TRAIN_IMDB} \
   --imdb_val ${TEST_IMDB} \
-  --cfg ${CONFIG} \
+  --cfg "experiments/cfgs/${CONFIG}" \
   --log_dir ${DST_DIR} \
   --rand \
 #  --set ${EXTRA_ARGS}
@@ -136,17 +136,10 @@ NET_FINAL=`grep -B 2 "done solving" ${LOG} | grep "Snapshotting to binary proto 
 ITER_FINAL=`grep "experiments" ${NET_FINAL} | awk 'BEGIN {FS="/"}{print $6}' | awk 'BEGIN {FS="."}{print $1}'` 
 set -x
 
-
-case $DATASET in
- kitti)
-   time ./tools/eval_kitti.py --gpu ${GPU_ID} \
-     --net ${NET} \
-     --iter ${ITERS}
- *)
-   time ./tools/test_net.py --gpu ${GPU_ID} \
-     --def "${DST_DIR}/models/test.prototxt" \
-     --net ${NET_FINAL} \
-     --imdb ${TEST_IMDB} \
-     --cfg "${DST_DIR}/${CONFIG}" \
-     --output_dir "${DST_DIR}/results/${ITER_FINAL}/"
-     ${EXTRA_ARGS}
+time ./tools/test_net.py --gpu ${GPU_ID} \
+  --def "${DST_DIR}/models/test.prototxt" \
+  --net ${NET_FINAL} \
+  --imdb ${TEST_IMDB} \
+  --cfg "${DST_DIR}/${CONFIG}" \
+  --output_dir "${DST_DIR}/results/${ITER_FINAL}/"
+  ${EXTRA_ARGS}

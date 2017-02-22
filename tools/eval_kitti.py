@@ -48,7 +48,8 @@ import seaborn as sns
 
 import ipdb
 
-# CLASSES = ()
+global CLASSES
+
 #CLASSES = ('__background__', 'Pedestrian', 'Cyclist', 'Car')
 #CONF_THRESH = 0.8
 CONF_THRESH = 0.01
@@ -91,7 +92,7 @@ def _get_image_blob(im):
             in the image pyramid
     """
     im_orig = im.astype(np.float32, copy=True)
-    # im_orig -= cfg.PIXEL_MEANS
+    im_orig -= cfg.PIXEL_MEANS
 
     im_shape = im_orig.shape
     im_size_min = np.min(im_shape[0:2])
@@ -114,7 +115,7 @@ def _get_image_blob(im):
 
     # Create a blob to hold the input images
     blob = im_list_to_blob(processed_ims)
-    blob /= 255.0
+    # blob /= 255.0
 
     return blob, np.array(im_scale_factors)
 
@@ -286,7 +287,7 @@ def parse_args():
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
     parser.add_argument('--net', dest='demo_net', help='Network to use',
-                        default='test.prototxt')    
+                        default='models/test.prototxt')    
     parser.add_argument('--iter', dest='demo_iter', help='Iteration', default=-1, type=int)    
     parser.add_argument('--conf_thres', dest='conf_thres', help='Confidence threshold', 
                         default=CONF_THRESH, type=float)
@@ -312,9 +313,6 @@ if __name__ == '__main__':
     assert len(cfg_file) == 1, 'Too many .cfg files.'
     cfg_from_file(cfg_file[0])
     
-    CLASSES = cfg.CLASSES
-
-    print 'Classes: ', CLASSES
         
     prototxt = args.demo_net
     caffemodels = glob.glob('snapshots/*.caffemodel')
@@ -350,18 +348,20 @@ if __name__ == '__main__':
     print '\n\nLoaded network {:s}'.format(caffemodel)
 
     imdb = get_imdb('kitti_2012_val')
+    global CLASSES
+    CLASSES = imdb.classes 
 
-    if cfg.TRAIN.DATADRIVEN_ANCHORS:
+    # if cfg.TRAIN.DATADRIVEN_ANCHORS:
 
-        print '############################################################'
-        print 'Use Data-driven anchors'
-        print '############################################################'
+    #     print '############################################################'
+    #     print 'Use Data-driven anchors'
+    #     print '############################################################'
   
-        # Set dataset-specific anchors
-        anchors = imdb.get_anchors()
+    #     # Set dataset-specific anchors
+    #     anchors = imdb.get_anchors()
 
-        proposal_layer_ind = list(net._layer_names).index('proposal')
-        net.layers[proposal_layer_ind].setup_anchor(anchors)
+    #     proposal_layer_ind = list(net._layer_names).index('proposal')
+    #     net.layers[proposal_layer_ind].setup_anchor(anchors)
 
 
     # Warmup on a dummy image

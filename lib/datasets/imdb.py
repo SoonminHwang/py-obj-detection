@@ -112,7 +112,61 @@ class imdb(object):
             entry = {'boxes' : boxes,
                      'gt_overlaps' : self.roidb[i]['gt_overlaps'],
                      'gt_classes' : self.roidb[i]['gt_classes'],
-                     'flipped' : True}
+                     'flipped' : True,
+                     'gamma' : self.roidb[i]['gamma'], 
+                     'crop' : self.roidb[i]['crop'],
+                     'jitter' : self.roidb[i]['jitter']}
+            self.roidb.append(entry)
+        self._image_index = self._image_index * 2
+
+    def append_photometric_transformed_images(self):
+        num_images = self.num_images
+
+        for i in xrange(num_images):                    
+            entry = {'boxes' : self.roidb[i]['boxes'],
+                     'gt_overlaps' : self.roidb[i]['gt_overlaps'],
+                     'gt_classes' : self.roidb[i]['gt_classes'],
+                     'flipped' : self.roidb[i]['flipped'],
+                     'gamma' : True,
+                     'crop' : self.roidb[i]['crop'],
+                     'jitter' : self.roidb[i]['jitter']}
+            self.roidb.append(entry)
+        self._image_index = self._image_index * 2
+
+    def append_crop_resize_images(self):
+        num_images = self.num_images
+        heights = self._get_heights()
+        widths = self._get_widths()
+        
+        scale = npr.uniform(cfg.TRAIN.SCALE_RNG[0], cfg.TRAIN.SCALE_RNG[1], size=(1))
+
+        for i, h, w in zip(xrange(num_images), heights, widths):
+            w_crop = int(w * scale)
+            h_crop = int(h * scale)
+            w_off = int(npr.uniform( 0, w * (1 - scale) / 2., size=(1) ))
+            h_off = int(npr.uniform( 0, h * (1 - scale) / 2., size=(1) ))
+
+            boxes = self.roidb[i]['boxes'].copy()
+            boxes_orig = self.roidb[i]['boxes'].copy()
+            boxes = boxes.astype(np.float)
+
+            w_delta = (w * (scale-1.0)) / 2
+            h_delta = (h * (scale-1.0)) / 2
+
+            boxes[:, 0] = ( boxes[:, 0] - w_off ) / scale
+            boxes[:, 1] = ( boxes[:, 1] - h_off ) / scale
+            boxes[:, 2] = ( boxes[:, 2] - w_off ) / scale
+            boxes[:, 3] = ( boxes[:, 3] - h_off ) / scale            
+                        
+            assert (boxes[:, 2] >= boxes[:, 0]).all()
+            entry = {'boxes' : boxes,
+                     'gt_overlaps' : self.roidb[i]['gt_overlaps'],
+                     'gt_classes' : self.roidb[i]['gt_classes'],
+                     'flipped' : self.roidb[i]['flipped'],
+                     'gamma' : self.roidb[i]['gamma'],
+                     'crop' : [h_off, h_off+h_crop, w_off, w_off+w_crop, h, w],
+                     'jitter' : self.roidb[i]['jitter']}
+            
             self.roidb.append(entry)
         self._image_index = self._image_index * 2
 

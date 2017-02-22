@@ -29,6 +29,16 @@ TRAIN:
   RPN_BATCHSIZE: 256
   PROPOSAL_METHOD: gt
   BG_THRESH_LO: 0.0
+  
+  # Default 600
+  SCALES: [1200] 
+  # Default 1000
+  MAX_SIZE: 2000
 
 TEST:
   HAS_RPN: True
+  
+  # Default 600
+  SCALES: [1200] 
+  # Default 1000
+  MAX_SIZE: 2000
