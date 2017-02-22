@@ -18,6 +18,10 @@ import argparse
 import pprint
 import time, os, sys
 
+IMDB_NAMES = {  'kitti_val': 'kitti_2012_val', 
+                'kitti_test': 'kitti_2012_test',
+                'voc07_test': 'voc_2007_test'}
+
 def parse_args():
     """
     Parse input arguments
@@ -36,9 +40,10 @@ def parse_args():
     parser.add_argument('--wait', dest='wait',
                         help='wait until net file exists',
                         default=True, type=bool)
-    parser.add_argument('--imdb', dest='imdb_name',
-                        help='dataset to test',
-                        default='voc_2007_test', type=str)
+    parser.add_argument('--imdb', dest='imdb', 
+                        help='imdb for demo', 
+                        choices=IMDB_NAMES.keys(), 
+                        default='kitti_test', type=str)
     parser.add_argument('--comp', dest='comp_mode', help='competition mode',
                         action='store_true')
     parser.add_argument('--set', dest='set_cfgs',
@@ -85,8 +90,10 @@ if __name__ == '__main__':
     net = caffe.Net(args.prototxt, args.caffemodel, caffe.TEST)
     net.name = os.path.splitext(os.path.basename(args.caffemodel))[0]
 
-    imdb = get_imdb(args.imdb_name)
-    imdb.competition_mode(args.comp_mode)
+    # imdb = get_imdb(args.imdb_name)
+    imdb = get_imdb(IMDB_NAMES[args.imdb])
+    print 'imdb: %s' % imdb.name
+    # imdb.competition_mode(args.comp_mode)
     if not cfg.TEST.HAS_RPN:
         imdb.set_proposal_method(cfg.TEST.PROPOSAL_METHOD)
 

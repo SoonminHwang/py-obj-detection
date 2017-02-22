@@ -1,20 +1,32 @@
-#!/home/rcvlab/anaconda2/bin/python
-
+#!/usr/bin/env python
 # --------------------------------------------------------
 # Faster R-CNN
 # Copyright (c) 2015 Microsoft
 # Licensed under The MIT License [see LICENSE for details]
 # Written by Ross Girshick
 # --------------------------------------------------------
+# Modified by Soonmin Hwang
+# --------------------------------------------------------
 
 """
 Demo script showing detections in sample images.
+Modified to enhance flexivility for trained model selection and dataset
 
 See README.md for installation instructions before running.
 """
 
-import _init_paths
-from fast_rcnn.config import cfg
+#import _init_paths
+
+import sys
+import os.path as osp
+
+caffe_path = osp.join(osp.dirname(__file__), '..', '..', '..', '..', 'caffe-latest', 'python')
+if caffe_path not in sys.path: sys.path.insert(0, caffe_path)
+
+lib_path = osp.join(osp.dirname(__file__), '..', '..', '..', '..', 'lib')
+if lib_path not in sys.path: sys.path.insert(0, lib_path)
+
+from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
 from fast_rcnn.test import im_detect
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
@@ -24,78 +36,18 @@ import scipy.io as sio
 import caffe, os, sys, cv2
 import argparse
 
-CLASSES = ('__background__',
-           'aeroplane', 'bicycle', 'bird', 'boat',
-           'bottle', 'bus', 'car', 'cat', 'chair',
-           'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant',
-           'sheep', 'sofa', 'train', 'tvmonitor')
+from datasets.factory import get_imdb
+import seaborn as sns
+import glob
 
-NETS = {'vgg16': ('VGG16',
-                  'VGG16_faster_rcnn_final.caffemodel'),
-        'zf': ('ZF',
-                  'ZF_faster_rcnn_final.caffemodel')}
+IMDB_NAMES = {  'kitti_val': 'kitti_2012_val', 
+                'kitti_test': 'kitti_2012_test',
+                'voc07_test': 'voc_2007_test'}
 
+global CLASSES
+CONF_THRESH = 0.01
+NMS_THRESH = 0.3
 
-def vis_detections(im, class_name, dets, thresh=0.5):
-    """Draw detected bounding boxes."""
-    inds = np.where(dets[:, -1] >= thresh)[0]
-    if len(inds) == 0:
-        return
-
-    im = im[:, :, (2, 1, 0)]
-    fig, ax = plt.subplots(figsize=(12, 12))
-    ax.imshow(im, aspect='equal')
-    for i in inds:
-        bbox = dets[i, :4]
-        score = dets[i, -1]
-
-        ax.add_patch(
-            plt.Rectangle((bbox[0], bbox[1]),
-                          bbox[2] - bbox[0],
-                          bbox[3] - bbox[1], fill=False,
-                          edgecolor='red', linewidth=3.5)
-            )
-        ax.text(bbox[0], bbox[1] - 2,
-                '{:s} {:.3f}'.format(class_name, score),
-                bbox=dict(facecolor='blue', alpha=0.5),
-                fontsize=14, color='white')
-
-    ax.set_title(('{} detections with '
-                  'p({} | box) >= {:.1f}').format(class_name, class_name,
-                                                  thresh),
-                  fontsize=14)
-    plt.axis('off')
-    plt.tight_layout()
-    plt.draw()
-
-def demo(net, image_name):
-    """Detect object classes in an image using pre-computed object proposals."""
-
-    # Load the demo image
-    im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
-    im = cv2.imread(im_file)
-
-    # Detect all object classes and regress object bounds
-    timer = Timer()
-    timer.tic()
-    scores, boxes = im_detect(net, im)
-    timer.toc()
-    print ('Detection took {:.3f}s for '
-           '{:d} object proposals').format(timer.total_time, boxes.shape[0])
-
-    # Visualize detections for each class
-    CONF_THRESH = 0.8
-    NMS_THRESH = 0.3
-    for cls_ind, cls in enumerate(CLASSES[1:]):
-        cls_ind += 1 # because we skipped background
-        cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
-        cls_scores = scores[:, cls_ind]
-        dets = np.hstack((cls_boxes,
-                          cls_scores[:, np.newaxis])).astype(np.float32)
-        keep = nms(dets, NMS_THRESH)
-        dets = dets[keep, :]
-        vis_detections(im, cls, dets, thresh=CONF_THRESH)
 
 def parse_args():
     """Parse input arguments."""
@@ -105,28 +57,119 @@ def parse_args():
     parser.add_argument('--cpu', dest='cpu_mode',
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
-    parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
-                        choices=NETS.keys(), default='vgg16')
+    parser.add_argument('--net', dest='demo_net', help='Network to use',
+                        default='models/test.prototxt')    
+    parser.add_argument('--iter', dest='demo_iter', help='Iteration', default=-1, type=int)    
+    parser.add_argument('--imdb', dest='imdb', help='imdb for demo', 
+                        choices=IMDB_NAMES.keys(), default='kitti_test', type=str)
+    parser.add_argument('--conf_thres', dest='conf_thres', help='Confidence threshold', 
+                        default=CONF_THRESH, type=float)
+    parser.add_argument('--nms_thres', dest='nms_thres', help='NMS threshold', 
+                        default=NMS_THRESH, type=float)    
+    parser.add_argument('--demo_dir', dest='demo_dir',
+                        help='A directory that has a few images',
+                        default=None, type=str)
 
     args = parser.parse_args()
 
     return args
 
+
+def demo(net, image_name, conf_thres, nms_thres, iter):
+    """Detect object classes in an image using pre-computed object proposals."""
+    global CLASSES
+
+    # Load the demo image
+    im_file = image_name
+    im = cv2.imread(im_file)
+    fname = os.path.basename(image_name)
+
+    # Detect all object classes and regress object bounds
+    # timers
+    _t = {'im_detect' : Timer(), 'misc' : Timer()}
+
+    _t['im_detect'].tic()
+    scores, boxes = im_detect(net, im)
+    _t['im_detect'].toc()
+    
+    
+    _t['misc'].tic()    
+    results = np.zeros((0, 6), dtype=np.float32)
+    # Visualize detections for each class
+    # for cls_ind, cls in enumerate(CLASSES[1:5]):
+    for cls_ind, cls in enumerate(CLASSES[1:]):    
+        cls_ind += 1 # because we skipped background
+        cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
+        cls_scores = scores[:, cls_ind]
+        dets = np.hstack((cls_boxes,
+                          cls_scores[:, np.newaxis])).astype(np.float32)
+        
+        # CPU NMS is much faster than GPU NMS when the number of boxes
+        # is relative small (e.g., < 10k)
+        # TODO(rbg): autotune NMS dispatch
+        keep = nms(dets, nms_thres, force_cpu=True)
+        dets = dets[keep, :]
+        results = np.vstack( (results, np.insert(dets, 0, cls_ind, axis=1)) )        
+    _t['misc'].toc()  
+    
+
+    plt.figure(1, figsize=(15,10))
+    plt.clf()
+    axe = plt.gca()
+    axe.imshow(im[:,:,(2,1,0)])
+
+    clrs = sns.color_palette("Set2", len(CLASSES))
+    for det in results:
+        cls_ind, box, score = det[0], det[1:5], det[5]
+        if score < 0.8: continue
+        clr = clrs[int(cls_ind)]
+        rect = plt.Rectangle( (box[0], box[1]), box[2]-box[0], box[3]-box[1], 
+            fill=False, edgecolor=clr, linewidth=2.5, label=CLASSES[int(cls_ind)])
+        axe.add_patch(rect)
+        axe.text(box[0], box[1]-2, '{:.3f}'.format(score), 
+            bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='white')
+
+    axe.axis('off')
+    if not len(results) == 0:
+        plt.gca().legend()
+
+    save_name = os.path.basename(im_file)
+    plt.savefig('[DEMO_iter_%d]' % iter + save_name, dpi=200)  
+
+    return _t
+       
 if __name__ == '__main__':
+    
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
 
     args = parse_args()
+    
+    cfg_file = glob.glob('*.yml')
 
-    # prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
-    #                         'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
-    prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
-                            'faster_rcnn_end2end', 'test.prototxt')
-    caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
-                              NETS[args.demo_net][1])
+    assert len(cfg_file) == 1, 'Too many .cfg files.'
+    cfg_from_file(cfg_file[0])
+    
+        
+    prototxt = args.demo_net
+    caffemodels = glob.glob('snapshots/*.caffemodel')
+    
+    import re    
+    try:                
+        caffemodel = [model for model in caffemodels if int(re.search('iter_(\d+).caffemodel', model).group(1)) == args.demo_iter]
+        assert( len(caffemodel) == 1 )
+        caffemodel = caffemodel[0]
+        print 'Load snapshot: %s' % caffemodel        
+        model_iter = args.demo_iter
+    except:
+        print 'Cannot find iter %d.caffemodel' % args.demo_iter
+        
+        caffemodel = caffemodels[-1]
+        model_iter = int( re.search('iter_(\d+).caffemodel', caffemodel).group(1) )
 
+        print 'Load latest snapshot: %s' % caffemodel                
+                
     if not os.path.isfile(caffemodel):
-        raise IOError(('{:s} not found.\nDid you run ./data/script/'
-                       'fetch_faster_rcnn_models.sh?').format(caffemodel))
+        raise IOError(('{:s} not found.').format(caffemodel))
 
     if args.cpu_mode:
         caffe.set_mode_cpu()
@@ -134,21 +177,34 @@ if __name__ == '__main__':
         caffe.set_mode_gpu()
         caffe.set_device(args.gpu_id)
         cfg.GPU_ID = args.gpu_id
-    net = caffe.Net(prototxt, caffemodel, caffe.TEST)
-
+            
+    net = caffe.Net(prototxt, caffe.TEST, weights=caffemodel)    
     print '\n\nLoaded network {:s}'.format(caffemodel)
+
+    # imdb
+    imdb = get_imdb(IMDB_NAMES[args.imdb])
+    print 'imdb: %s' % imdb.name
+    global CLASSES
+    CLASSES = imdb.classes 
 
     # Warmup on a dummy image
     im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
     for i in xrange(2):
         _, _= im_detect(net, im)
 
-    im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
-                '001763.jpg', '004545.jpg']
-    for im_name in im_names:
-        print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-        print 'Demo for data/demo/{}'.format(im_name)
-        demo(net, im_name)
-        plt.savefig(im_name)
+    if not args.demo_dir:
+        # demo from imdb
+        for ii in np.random.choice(imdb.num_images, 5):
+            im_name = imdb.image_path_at(ii)
+            timer = demo(net, im_name, args.conf_thres, args.nms_thres, model_iter)
+            print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s'.format(os.path.basename(im_name), ii + 1, 
+                imdb.num_images, timer['im_detect'].average_time, 
+                timer['misc'].average_time)
 
-    plt.show()
+    else:
+        # demo from images
+        im_names = glob.glob( os.path.join(args.demo_dir, '*.png') )
+        for im_name in im_names:
+            timer = demo(net, im_name, args.conf_thres, args.nms_thres, model_iter)
+            print '[im_detect, {:s}]: {:.3f}s {:.3f}s'.format(os.path.basename(im_name), 
+                timer['im_detect'].average_time, timer['misc'].average_time)      

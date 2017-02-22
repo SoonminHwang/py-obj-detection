@@ -167,10 +167,7 @@ class SolverWrapper(object):
                                   edgecolor=clr, linewidth=2.5, label=class_name)                    
                     )
                 axe.text(bbox[0], bbox[1]-2, '{:.3f}'.format(score), 
-                    bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='w')
-                
-                # plt.title('{}  {:.3f}'.format(class_name, score))
-                # plt.show()
+                    bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='w')                        
 
     def snapshot(self):
         """Take a snapshot of the network after unnormalizing the learned

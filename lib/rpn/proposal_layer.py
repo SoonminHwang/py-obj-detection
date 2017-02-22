@@ -9,7 +9,7 @@ import caffe
 import numpy as np
 import yaml
 from fast_rcnn.config import cfg
-from generate_anchors import generate_anchors
+from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x
 from fast_rcnn.bbox_transform import bbox_transform_inv, clip_boxes
 from fast_rcnn.nms_wrapper import nms
 
@@ -27,16 +27,23 @@ class ProposalLayer(caffe.Layer):
 
         self._feat_stride = layer_params['feat_stride']
         
-        # # scale1x: 8 ~ 32
-        # anchor_scales = layer_params.get('scales', (8, 16, 32))
-        # self._anchors = generate_anchors(scales=np.array(anchor_scales))
-        
-        # scale2x_10x7: 8 ~ 64, 
-        anchor_scales = 2**np.linspace(3, 6, 10)
-        anchor_ratios = [0.5, 0.75, 1., 1.25, 1.5, 1.75, 2]
-        self._anchors = generate_anchors(scales=anchor_scales, ratios=anchor_ratios)
+        if cfg.NET.KMEANS_ANCHOR:
+            self._anchors = kitti_kmeans_anchors_2x()
+        else:
+            # # scale1x: 8 ~ 32
+            # anchor_scales = layer_params.get('scales', (8, 16, 32))
+            # self._anchors = generate_anchors(scales=np.array(anchor_scales))
+            
+            # scale2x_10x7: 8 ~ 64, 
+            anchor_scales = 2**np.linspace(3, 6, 10)
+            anchor_ratios = [0.5, 0.75, 1., 1.25, 1.5, 1.75, 2]
+            self._anchors = generate_anchors(scales=anchor_scales, ratios=anchor_ratios)
 
         self._num_anchors = self._anchors.shape[0]
+        assert self._num_anchors == cfg.NET.NUM_ANCHORS, \
+            'Loaded anchors: %d, but cfg.NET.NUM_ANCHORS: %d.' % (self._num_anchors, cfg.NET.NUM_ANCHORS)
+        
+            
 
         if DEBUG:
             print 'feat_stride: {}'.format(self._feat_stride)

@@ -114,8 +114,9 @@ exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
 echo Copy .cfg "&" .prototxt "&" evaluation script files
-cp "./tools/eval_${DB_NAME}.py" $DST_DIR
-cp ./tools/kitti_evaluate_object.py $DST_DIR
+cp "./tools/demo.py" $DST_DIR
+#cp "./tools/eval_${DB_NAME}.py" $DST_DIR
+#cp ./tools/kitti_evaluate_object.py $DST_DIR
 #cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/solver.prototxt "${DST_DIR}/models"
 cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/trainval.prototxt "${DST_DIR}/models"
 cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/test.prototxt "${DST_DIR}/models"
@@ -135,6 +136,9 @@ set +x
 NET_FINAL=`grep -B 2 "done solving" ${LOG} | grep "Snapshotting to binary proto file" | awk '{print $10}'`
 ITER_FINAL=`grep "experiments" ${NET_FINAL} | awk 'BEGIN {FS="/"}{print $6}' | awk 'BEGIN {FS="."}{print $1}'` 
 set -x
+
+echo Test a few images with final model
+$DST_DIR/demo.py --gpu ${GPU_ID} --iter ITER_FINAL --imdb TEST_IMDB
 
 time ./tools/test_net.py --gpu ${GPU_ID} \
   --def "${DST_DIR}/models/test.prototxt" \

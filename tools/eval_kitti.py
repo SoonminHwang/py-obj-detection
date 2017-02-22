@@ -206,7 +206,7 @@ def im_detect(net, im, boxes=None):
     return scores, pred_boxes
 
 
-def demo(net, image_name, conf_thres, nms_thres, resDir, bShow=False):
+def demo(net, image_name, conf_thres, nms_thres, resDir, iter, bShow=False):
     """Detect object classes in an image using pre-computed object proposals."""
     global CLASSES
 
@@ -260,7 +260,7 @@ def demo(net, image_name, conf_thres, nms_thres, resDir, bShow=False):
 
         axe.axis('off')
         save_name = os.path.basename(im_file)
-        plt.savefig('[DEMO]'+save_name, dpi=200)  
+        plt.savefig('[DEMO_iter_%d]' % iter + save_name, dpi=200)  
 
     else:
         _t['save'].tic()
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     else:
         for ii in np.random.choice(imdb.num_images, 5):
             im_name = imdb.image_path_at(ii)
-            timer = demo(net, im_name, args.conf_thres, args.nms_thres, '', True)
+            timer = demo(net, im_name, args.conf_thres, args.nms_thres, '', model_iter, True)
             print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s {:.3f}s'.format(os.path.basename(im_name), ii + 1, 
                 imdb.num_images, timer['im_detect'].average_time, 
                 timer['misc'].average_time, timer['save'].average_time)

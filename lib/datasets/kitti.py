@@ -247,58 +247,49 @@ class kitti(imdb):
                 'crop' : None,          # Data augmentation
                 'jitter' : False}       # Data augmentation
 
-    # def _kitti_results_one_category(self, boxes, cat_id):
-    #     results = []
-    #     for im_ind, index in enumerate(self.image_index):
-    #         dets = boxes[im_ind].astype(np.float)
-    #         if dets == []:
-    #             continue
-    #         scores = dets[:, -1]
-    #         xs = dets[:, 0]
-    #         ys = dets[:, 1]
-    #         ws = dets[:, 2] - xs + 1
-    #         hs = dets[:, 3] - ys + 1
-    #         results.extend(
-    #           [{'image_id' : index,
-    #             'category_id' : cat_id,
-    #             'bbox' : [xs[k], ys[k], ws[k], hs[k]],
-    #             'score' : scores[k]} for k in xrange(dets.shape[0])])
-    #     return results
+    def _kitti_results_template(self):
+        # class string, x1 y1 x2 y2, score
+        resStr = '{:s} -1 -1 -10 {:.2f} {:.2f} {:.2f} {:.2f} -1 -1 -1 -1000 -1000 -1000 -10 {:.4f}\n'
+        return resStr
 
-    # def _write_kitti_results_file(self, all_boxes, res_file):
-    #     # [{"image_id": 42,
-    #     #   "category_id": 18,
-    #     #   "bbox": [258.15,41.29,348.26,243.78],
-    #     #   "score": 0.236}, ...]
-    #     results = []
-    #     for cls_ind, cls in enumerate(self.classes):
-    #         if cls == '__background__':
-    #             continue
-    #         print 'Collecting {} results ({:d}/{:d})'.format(cls, cls_ind,
-    #                                                       self.num_classes - 1)
-    #         kitti_cat_id = self._class_to_kitti_cat_id[cls]
-    #         results.extend(self._kitti_results_one_category(all_boxes[cls_ind],
-    #                                                        kitti_cat_id))            
-    #     print 'Writing results json to {}'.format(res_file)
-    #     with open(res_file, 'w') as fid:
-    #         json.dump(results, fid)
-      
+    def _write_kitti_results_file(self, all_boxes, output_dir):
+        # all detections are collected into:
+        #    all_boxes[cls][image] = N x 5 array of detections in
+        #    (x1, y1, x2, y2, score)
+        
+        for im_ind, index in enumerate(self.image_index):
+            im_name = os.path.basename( self.image_path_at(im_ind) )
+            im_name = im_name.replace('png', 'txt')
+            
+            with open(os.path.join(output_dir, im_name), 'w') as f:
 
-    # def evaluate_detections(self, all_boxes, output_dir):
-    #     res_file = osp.join(output_dir, ('detections_' +
-    #                                      self._image_set +
-    #                                      self._year +
-    #                                      '_results'))
-    #     #if self.config['use_salt']:
-    #     #    res_file += '_{}'.format(str(uuid.uuid4()))
-    #     res_file += '.json'
-    #     self._write_kitti_results_file(all_boxes, res_file)
-    #     # Only do evaluation on non-test sets
-    #     #if self._image_set.find('test') == -1:
-    #     #    self._do_detection_eval(res_file, output_dir)
-    #     # Optionally cleanup results json file
-    #     #if self.config['cleanup']:
-    #     #    os.remove(res_file)
+                for cls_ind, cls in enumerate(self.classes):
+                    if cls == '__background__': continue                
+                    
+                    dts = all_boxes[cls_ind][im_ind].astype(np.float)
+                    if dts == []: continue
+
+                    for dt in dts:
+                        f.write( 
+                            self._kitti_results_template().format(cls, dt[0], dt[1], dt[2], dt[3], dt[4])
+                        )
+
+    def evaluate_detections(self, all_boxes, output_dir):
+        self._write_kitti_results_file(all_boxes, output_dir)
+        self._do_python_eval(output_dir)
+
+
+    def _do_python_eval(self, result_dir):
+        from kitti_eval import EvalKITTI
+        gtDir = os.path.join( cfg.ROOT_DIR, 'data', 'kitti', 'annotations', self._image_set + self._year )
+        
+        if os.path.exists(gtDir):
+            # validation set
+            eval_kitti = EvalKITTI(gtDir, result_dir, basePth='')
+            eval_kitti.evaluate()
+        else:
+            # test set
+            print '"%s" does not exist. Cannot evaluate detection results.'
 
    
 # For Debugging purpose,   
@@ -420,34 +411,45 @@ def get_assigned_anchor_index(anchors, boxes, imgsize, stride):
 
 def gen_anchors(roidb, num_anchors, valid_cls):
                  
-        boxes = []        
-        for rr in roidb:
-            for cls, box in zip(rr['gt_classes'], rr['boxes']):
-                if cls in valid_cls:
-                    boxes.append(box)                
+    max_size = cfg.TRAIN.MAX_SIZE
+    target_size = cfg.TRAIN.SCALES[0]
+    im_size_min, im_size_max = (375, 1242)
+    im_scale = float(target_size) / float(im_size_min)
+    # Prevent the biggest axis from being more than MAX_SIZE
+    if np.round(im_scale * im_size_max) > max_size:
+        im_scale = float(max_size) / float(im_size_max)
 
-        boxes = np.vstack( boxes )        
-        boxes_wh = np.log( boxes[:,2:] - boxes[:, :2] )
+    # anchors = anchors * im_scale
 
-        from sklearn.cluster import KMeans        
+    boxes = []        
+    for rr in roidb:
+        for cls, box in zip(rr['gt_classes'], rr['boxes']):            
+            if cls in valid_cls:                
+                box = box * im_scale
+                boxes.append(box)                
 
-        km = KMeans(n_clusters=num_anchors)
-        km.fit(boxes_wh)
+    boxes = np.vstack( boxes )        
+    boxes_wh = np.log( boxes[:,2:] - boxes[:, :2] )
 
-        # # Show statistics
-        # boxes_wh_k = [boxes_wh[km.labels_==l, :] for l in range(num_anchors)]
-        # stds = [np.mean((ctr - wh)**2, axis=0) for ctr, wh in zip(km.cluster_centers_, boxes_wh_k)]
-        # nSamples = [len(wh) for wh in boxes_wh_k]            
+    from sklearn.cluster import KMeans        
 
-        # Construct anchors ([w_center, h_center] -> [x1 y1 x2 y2])
-        wh_centers = np.vstack( (np.exp(km.cluster_centers_)) )
+    km = KMeans(n_clusters=num_anchors)
+    km.fit(boxes_wh)
 
-        area = wh_centers[:,0] * wh_centers[:,1]
-        idx = area.argsort()
-        wh_centers = wh_centers[idx, :]
-        anchors = np.hstack( (-1 * wh_centers/2., wh_centers/2.))
+    # # Show statistics
+    # boxes_wh_k = [boxes_wh[km.labels_==l, :] for l in range(num_anchors)]
+    # stds = [np.mean((ctr - wh)**2, axis=0) for ctr, wh in zip(km.cluster_centers_, boxes_wh_k)]
+    # nSamples = [len(wh) for wh in boxes_wh_k]            
 
-        return anchors
+    # Construct anchors ([w_center, h_center] -> [x1 y1 x2 y2])
+    wh_centers = np.vstack( (np.exp(km.cluster_centers_)) )
+
+    area = wh_centers[:,0] * wh_centers[:,1]
+    idx = area.argsort()
+    wh_centers = wh_centers[idx, :]
+    anchors = np.hstack( (-1 * wh_centers/2., wh_centers/2.))
+
+    return anchors
 
 if __name__ == '__main__':
 
@@ -467,7 +469,7 @@ if __name__ == '__main__':
 
     plt.ion()
         
-    num_anchors = 15
+    num_anchors = 70
 
     # anchors_person = gen_anchors(imdb.roidb, 10, [1])
     # anchors_cyclist = gen_anchors(imdb.roidb, 10, [2])
@@ -476,6 +478,9 @@ if __name__ == '__main__':
     
     anchors = gen_anchors(imdb.roidb, num_anchors, [1, 2, 3])
     
+    
+
+
           
     from rpn.generate_anchors import generate_anchors
     # anchor_scales = np.exp( np.linspace( np.log(2), np.log(11), 3 ) )    

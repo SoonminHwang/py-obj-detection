@@ -63,6 +63,7 @@ __C.NET.NUM_CLASSES = 4
 
 __C.NET.NUM_ANCHORS = 9
 
+__C.NET.KMEANS_ANCHOR = False
 
 
 #
