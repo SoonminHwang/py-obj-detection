@@ -299,7 +299,7 @@ def drawPlot(ax, dict_list, xLabel, yLabel, avg_step, clr, prop):
 
     ax.plot(xx, yy, clr, alpha=prop['alpha'])
     ax.plot(xx[::avg_step], yy_avg, clr, label=prop['label'])
-    # ax.set_yscale('log')
+    ax.set_yscale('log')
 
 def main():
     args = parse_args()

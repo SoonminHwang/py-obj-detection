@@ -11,7 +11,7 @@ import yaml
 from fast_rcnn.config import cfg
 import numpy as np
 import numpy.random as npr
-from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x
+from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x, kitti_kmeans_anchors_1x
 from utils.cython_bbox import bbox_overlaps
 from fast_rcnn.bbox_transform import bbox_transform
 
@@ -28,7 +28,12 @@ class AnchorTargetLayer(caffe.Layer):
         
 
         if cfg.NET.KMEANS_ANCHOR:
-            self._anchors = kitti_kmeans_anchors_2x()
+            if cfg.TRAIN.SCALES[0] == 375:
+                self._anchors = kitti_kmeans_anchors_1x()
+            elif cfg.TRAIN.SCALES[0] == 755:
+                self._anchors = kitti_kmeans_anchors_2x()
+            else:
+                raise NotImplementedError
         else:
             # # scale1x: 8 ~ 32
             # anchor_scales = layer_params.get('scales', (8, 16, 32))

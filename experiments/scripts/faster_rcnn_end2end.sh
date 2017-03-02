@@ -120,6 +120,7 @@ cp "./tools/demo.py" $DST_DIR
 #cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/solver.prototxt "${DST_DIR}/models"
 cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/trainval.prototxt "${DST_DIR}/models"
 cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/test.prototxt "${DST_DIR}/models"
+cp ./tools/testAll.py $DST_DIR
 cp "experiments/cfgs/${CONFIG}" $DST_DIR
 
 
@@ -138,7 +139,9 @@ ITER_FINAL=`grep "experiments" ${NET_FINAL} | awk 'BEGIN {FS="/"}{print $6}' | a
 set -x
 
 echo Test a few images with final model
-$DST_DIR/demo.py --gpu ${GPU_ID} --iter ITER_FINAL --imdb TEST_IMDB
+cd $DST_DIR
+./demo.py --gpu ${GPU_ID} --iter ${ITER_FINAL} --imdb ${TEST_IMDB}
+cd ../../../../
 
 time ./tools/test_net.py --gpu ${GPU_ID} \
   --def "${DST_DIR}/models/test.prototxt" \

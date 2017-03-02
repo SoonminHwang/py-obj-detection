@@ -129,9 +129,8 @@ def demo(net, image_name, conf_thres, nms_thres, iter):
         axe.text(box[0], box[1]-2, '{:.3f}'.format(score), 
             bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='white')
 
-    axe.axis('off')
-    if not len(results) == 0:
-        plt.gca().legend()
+    axe.axis('off')    
+    plt.gca().legend()
 
     save_name = os.path.basename(im_file)
     plt.savefig('[DEMO_iter_%d]' % iter + save_name, dpi=200)  
