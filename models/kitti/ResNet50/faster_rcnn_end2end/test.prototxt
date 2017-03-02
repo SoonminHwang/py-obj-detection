@@ -1,5 +1,5 @@
 name: "Resnet50_ILSVRC"
-input: "data"
+input: "image"
 input_shape {
   dim: 1
   dim: 3
@@ -14,7 +14,7 @@ input_shape {
   dim: 3
 }
 layer {
-	bottom: "data"
+	bottom: "image"
 	top: "conv1"
 	name: "conv1"
 	type: "Convolution"

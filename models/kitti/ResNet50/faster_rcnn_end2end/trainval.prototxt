@@ -2,7 +2,7 @@ name: "Resnet50_ILSVRC"
 layer {
   name: 'input-data'
   type: 'Python'
-  top: 'data'
+  top: 'image'
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
@@ -18,7 +18,7 @@ layer {
 layer {
   name: 'input-data'
   type: 'Python'
-  top: 'data'
+  top: 'image'
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
@@ -33,7 +33,7 @@ layer {
 
 
 layer {
-	bottom: "data"
+	bottom: "image"
 	top: "conv1"
 	name: "conv1"
 	type: "Convolution"

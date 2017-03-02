@@ -1,6 +1,6 @@
 name: "ZF"
 
-input: "data"
+input: "image"
 input_shape {
   dim: 1
   dim: 3
@@ -19,7 +19,7 @@ input_shape {
 layer {
 	name: "conv1"
 	type: "Convolution"
-	bottom: "data"
+	bottom: "image"
 	top: "conv1"
 	convolution_param {
 		num_output: 96

@@ -127,6 +127,53 @@ class kitti(imdb):
         # do not have gt annotations)
         #self._gt_splits = ['train', 'val', 'minival']
 
+        # Add input modalities
+        self.input_types = ('image', 'depth')
+        self.input_path_at = []
+        self.input_path_from_index = []
+        # self.input_preprocess = []
+
+        for modal in self.input_types:
+            input_path_at = eval('self.' + modal + '_path_at')
+            input_path_from_index = eval('self.' + modal + '_path_from_index')
+            # input_preprocess = eval('self.' + modal + '_preprocess')
+            
+            self.input_path_at.append( input_path_at )
+            self.input_path_from_index.append( input_path_from_index )
+
+
+    # def image_preprocess(self, im, pixel_means, target_size, max_size):
+    #     """Mean subtract and scale an image for use in a blob."""
+    #     im = im.astype(np.float32, copy=False)
+    #     im -= pixel_means
+    #     im_shape = im.shape
+    #     im_size_min = np.min(im_shape[0:2])
+    #     im_size_max = np.max(im_shape[0:2])
+    #     im_scale = float(target_size) / float(im_size_min)
+    #     # Prevent the biggest axis from being more than MAX_SIZE
+    #     if np.round(im_scale * im_size_max) > max_size:
+    #         im_scale = float(max_size) / float(im_size_max)
+    #     im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale,
+    #                     interpolation=cv2.INTER_LINEAR)
+
+    #     return im, im_scale
+
+    # def depth_preprocess(self, im, pixel_means, target_size, max_size):
+    #     """Mean subtract and scale an image for use in a blob."""
+    #     im = im.astype(np.float32, copy=False)
+    #     im -= pixel_means
+    #     im_shape = im.shape
+    #     im_size_min = np.min(im_shape[0:2])
+    #     im_size_max = np.max(im_shape[0:2])
+    #     im_scale = float(target_size) / float(im_size_min)
+    #     # Prevent the biggest axis from being more than MAX_SIZE
+    #     if np.round(im_scale * im_size_max) > max_size:
+    #         im_scale = float(max_size) / float(im_size_max)
+    #     im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale,
+    #                     interpolation=cv2.INTER_LINEAR)
+
+    #     return im, im_scale
+
     def _get_ann_file(self):
         prefix = 'instances' if self._image_set.find('test') == -1 \
                              else 'image_info'            
@@ -162,6 +209,24 @@ class kitti(imdb):
         assert osp.exists(image_path), \
                 'Path does not exist: {}'.format(image_path)
         return image_path
+
+    def depth_path_at(self, i):
+        """
+        Return the absolute path to image i in the image sequence.
+        """
+        return self.depth_path_from_index(self._image_index[i])
+
+    def depth_path_from_index(self, index):
+        """
+        Construct an image path from the image's "index" identifier.
+        """
+        im_ann = self._KITTI.loadImgs(index)[0]                    
+        image_path = osp.join(self._data_path, 'depths', self._data_name, im_ann['file_name'])
+        
+        assert osp.exists(image_path), \
+                'Path does not exist: {}'.format(image_path)
+        return image_path
+
 
     def gt_roidb(self):
         """

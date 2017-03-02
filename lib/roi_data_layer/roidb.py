@@ -24,7 +24,18 @@ def prepare_roidb(imdb):
              for i in xrange(imdb.num_images)]
     roidb = imdb.roidb
     for i in xrange(len(imdb.image_index)):
-        roidb[i]['image'] = imdb.image_path_at(i)
+
+        # roidb[i]['image'] = imdb.image_path_at(i)
+
+        assert len(imdb.input_path_at) == len(imdb.input_path_from_index), \
+            "Invalid number of input func. Check datasets/kitti.py"
+
+        roidb[i]['input'] = []
+        for n in range( len(imdb.input_path_at) ):
+            input_type = imdb.input_types[n]
+            input_file = imdb.input_path_at[n](i)
+            roidb[i]['input'].append( {input_type: input_file} )
+            
         roidb[i]['width'] = sizes[i][0]
         roidb[i]['height'] = sizes[i][1]
         # need gt_overlaps as a dense array for argmax

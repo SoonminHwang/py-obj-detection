@@ -17,10 +17,11 @@ def im_list_to_blob(ims):
     """
     max_shape = np.array([im.shape for im in ims]).max(axis=0)
     num_images = len(ims)
-    blob = np.zeros((num_images, max_shape[0], max_shape[1], 3),
+    nCh = 1 if len(max_shape) < 3 else max_shape[2]
+    blob = np.zeros((num_images, max_shape[0], max_shape[1], nCh),
                     dtype=np.float32)
     for i in xrange(num_images):
-        im = ims[i]
+        im = ims[i]        
         blob[i, 0:im.shape[0], 0:im.shape[1], :] = im
     # Move channels (axis 3) to axis 1
     # Axis order will become: (batch elem, channel, height, width)

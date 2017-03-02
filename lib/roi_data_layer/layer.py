@@ -90,12 +90,17 @@ class RoIDataLayer(caffe.Layer):
 
         self._name_to_top_map = {}
 
-        # data blob: holds a batch of N images, each with 3 channels
+        # image blob: holds a batch of N images, each with 3 channels
         idx = 0
         top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
             max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
-        self._name_to_top_map['data'] = idx
+        self._name_to_top_map['image'] = idx
         idx += 1
+
+        # Add depth modality
+        top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
+            max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+        self._name_to_top_map['depth'] = idx
 
         if cfg.TRAIN.HAS_RPN:
             top[idx].reshape(1, 3)

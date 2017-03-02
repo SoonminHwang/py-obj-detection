@@ -3,7 +3,7 @@ name: "AlexNet"
 layer {
   name: 'input-data'
   type: 'Python'
-  top: 'data'
+  top: 'image'
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
@@ -19,7 +19,7 @@ layer {
 layer {
   name: 'input-data'
   type: 'Python'
-  top: 'data'
+  top: 'image'
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
@@ -37,7 +37,7 @@ layer {
 layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "image"
   top: "conv1"
   param {
     lr_mult: 1

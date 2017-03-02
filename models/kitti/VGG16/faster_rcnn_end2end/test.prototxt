@@ -1,6 +1,6 @@
 name: "VGG_ILSVRC_16_layers"
 
-input: "data"
+input: "image"
 input_shape {
   dim: 1
   dim: 3
@@ -17,7 +17,7 @@ input_shape {
 layer {
   name: "conv1_1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "image"
   top: "conv1_1"
   param {
     lr_mult: 0

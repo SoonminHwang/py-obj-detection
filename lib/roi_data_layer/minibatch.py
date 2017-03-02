@@ -26,10 +26,14 @@ def get_minibatch(roidb, num_classes):
     fg_rois_per_image = np.round(cfg.TRAIN.FG_FRACTION * rois_per_image)
 
     # Get the input image blob, formatted for caffe
-    im_blob, im_scales = _get_image_blob(roidb, random_scale_inds)
+    # im_blob, im_scales = _get_image_blob(roidb, random_scale_inds)
+    # blobs = {'data': im_blob}
 
-    blobs = {'data': im_blob}
+    input_blobs = _get_input_blob(roidb, random_scale_inds)
+    im_scales = input_blobs[-1]['scales']
 
+    blobs = { item.key(): item.value() for item in input_blobs[:-1] }
+    
     if cfg.TRAIN.HAS_RPN:
         assert len(im_scales) == 1, "Single batch only"
         assert len(roidb) == 1, "Single batch only"
@@ -125,6 +129,41 @@ def _sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
             roidb['bbox_targets'][keep_inds, :], num_classes)
 
     return labels, overlaps, rois, bbox_targets, bbox_inside_weights
+
+def _get_input_blob(roidb, scale_inds):
+    """Builds an input blob from the images in the roidb at the specified
+    scales.
+    """
+    num_images = len(roidb)
+    processed_ims = []
+    im_scales = []
+    # blob = {'scales': []}
+    blob = []
+    for i in xrange(num_images):
+
+        n_input_types = len(roidb[i]['input'])
+        for j in xrange(n_input_types):
+            input_type = roidb[i]['input'][j].key()
+            input_data = cv2.imread(roidb[i]['input'][j].value())
+
+            if roidb[i]['flipped']:
+                input_data = input_data[:, ::-1, :]
+            target_size = cfg.TRAIN.SCALES[scale_inds[i]]
+
+            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 128.0
+
+            input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
+                                            cfg.TRAIN.MAX_SIZE)
+                        
+            im_scales.append(im_scale)
+            # blob.append( { input_type: input_data } )
+            # processed_ims.append(input_data)
+
+            # Create a blob to hold the input images
+            blob.append( { input_type: im_list_to_blob(input_data) } )
+
+    blob.append( {'scales': im_scale} )
+    return blob
 
 def _get_image_blob(roidb, scale_inds):
     """Builds an input blob from the images in the roidb at the specified
