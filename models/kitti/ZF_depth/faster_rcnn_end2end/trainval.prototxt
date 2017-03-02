@@ -228,7 +228,7 @@ layer {
   name: "concat2"
   type: "Concat"
   bottom: "pool2"
-  bottom: "pool2_2"
+  bottom: "pool2_d"
   top: "concat2"
 
   concat_param {
@@ -246,7 +246,7 @@ layer {
   convolution_param {
     num_output: 256   # (256+256)-dim --> 256-dim
     kernel_size: 1
-    pad: 1
+    pad: 0
     stride: 1
 
     weight_filler { type: "gaussian" std: 0.01 }
@@ -425,7 +425,7 @@ layer {
   bottom: 'rpn_cls_score'
   bottom: 'gt_boxes'
   bottom: 'im_info'
-  bottom: 'data'
+  bottom: 'image'  
   top: 'rpn_labels'
   top: 'rpn_bbox_targets'
   top: 'rpn_bbox_inside_weights'

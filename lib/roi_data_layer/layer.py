@@ -98,9 +98,10 @@ class RoIDataLayer(caffe.Layer):
         idx += 1
 
         # Add depth modality
-        top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
+        top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
             max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
         self._name_to_top_map['depth'] = idx
+        idx += 1
 
         if cfg.TRAIN.HAS_RPN:
             top[idx].reshape(1, 3)

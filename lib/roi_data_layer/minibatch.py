@@ -13,6 +13,8 @@ import cv2
 from fast_rcnn.config import cfg
 from utils.blob import prep_im_for_blob, im_list_to_blob
 
+from transform.image_transform import _flip, _crop_resize, _gamma_correction
+
 def get_minibatch(roidb, num_classes):
     """Given a roidb, construct a minibatch sampled from it."""
     num_images = len(roidb)
@@ -30,9 +32,10 @@ def get_minibatch(roidb, num_classes):
     # blobs = {'data': im_blob}
 
     input_blobs = _get_input_blob(roidb, random_scale_inds)
-    im_scales = input_blobs[-1]['scales']
+    im_scales = input_blobs[-1]
 
-    blobs = { item.key(): item.value() for item in input_blobs[:-1] }
+    # blobs = { item.key(): item.value() for item in input_blobs[0] }
+    blobs = input_blobs[0]
     
     if cfg.TRAIN.HAS_RPN:
         assert len(im_scales) == 1, "Single batch only"
@@ -44,7 +47,7 @@ def get_minibatch(roidb, num_classes):
         gt_boxes[:, 4] = roidb[0]['gt_classes'][gt_inds]
         blobs['gt_boxes'] = gt_boxes
         blobs['im_info'] = np.array(
-            [[im_blob.shape[2], im_blob.shape[3], im_scales[0]]],
+            [[blobs['image'].shape[2], blobs['image'].shape[3], im_scales[0]]],
             dtype=np.float32)
     else: # not using RPN
         # Now, build the region of interest and label blobs
@@ -138,16 +141,21 @@ def _get_input_blob(roidb, scale_inds):
     processed_ims = []
     im_scales = []
     # blob = {'scales': []}
-    blob = []
+    blob = {}
     for i in xrange(num_images):
 
         n_input_types = len(roidb[i]['input'])
         for j in xrange(n_input_types):
-            input_type = roidb[i]['input'][j].key()
-            input_data = cv2.imread(roidb[i]['input'][j].value())
+            input_type = roidb[i]['input'][j].keys()[0]
+            input_data = cv2.imread(roidb[i]['input'][j].values()[0])
 
             if roidb[i]['flipped']:
-                input_data = input_data[:, ::-1, :]
+                input_data = _flip(input_data)
+            if roidb[i]['gamma']:
+                input_data = _gamma_correction(input_data)
+            if roidb[i]['crop'] is not None:
+                input_data = _crop_resize(input_data, roidb[i]['crop'])
+
             target_size = cfg.TRAIN.SCALES[scale_inds[i]]
 
             mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 128.0
@@ -159,11 +167,11 @@ def _get_input_blob(roidb, scale_inds):
             # blob.append( { input_type: input_data } )
             # processed_ims.append(input_data)
 
-            # Create a blob to hold the input images
-            blob.append( { input_type: im_list_to_blob(input_data) } )
+            # Create a blob to hold the input images            
+            blob[input_type] = im_list_to_blob([input_data])
 
-    blob.append( {'scales': im_scale} )
-    return blob
+    # blob['scales'] = [ im_scale ]
+    return blob, [im_scale]
 
 def _get_image_blob(roidb, scale_inds):
     """Builds an input blob from the images in the roidb at the specified

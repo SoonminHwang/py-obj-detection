@@ -128,7 +128,8 @@ class kitti(imdb):
         #self._gt_splits = ['train', 'val', 'minival']
 
         # Add input modalities
-        self.input_types = ('image', 'depth')
+        # self.input_types = ('image', 'depth')
+        self.input_types = ['image', 'depth']
         self.input_path_at = []
         self.input_path_from_index = []
         # self.input_preprocess = []
