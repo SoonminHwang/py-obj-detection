@@ -127,9 +127,10 @@ class kitti(imdb):
         # do not have gt annotations)
         #self._gt_splits = ['train', 'val', 'minival']
 
-        # Add input modalities
-        # self.input_types = ('image', 'depth')
-        self.input_types = ['image', 'depth']
+        # Add input modalities        
+        # self.input_types = ['image', 'depth']
+        self.input_types = cfg.INPUT
+
         self.input_path_at = []
         self.input_path_from_index = []
         # self.input_preprocess = []
@@ -222,7 +223,8 @@ class kitti(imdb):
         Construct an image path from the image's "index" identifier.
         """
         im_ann = self._KITTI.loadImgs(index)[0]                    
-        image_path = osp.join(self._data_path, 'depths', self._data_name, im_ann['file_name'])
+        fileName = im_ann['file_name'].replace('png', 'bin')
+        image_path = osp.join(self._data_path, 'depths', self._data_name, fileName)
         
         assert osp.exists(image_path), \
                 'Path does not exist: {}'.format(image_path)
@@ -305,7 +307,9 @@ class kitti(imdb):
         ds_utils.validate_boxes(boxes, width=width, height=height)
         overlaps = scipy.sparse.csr_matrix(overlaps)        
 
-        return {'boxes' : boxes,
+        return {'width' : width,
+                'height' : height,
+                'boxes' : boxes,
                 'gt_classes': gt_classes,
                 'gt_overlaps' : overlaps,
                 'flipped' : False,      # Data augmentation
@@ -524,8 +528,9 @@ if __name__ == '__main__':
     # cfg_from_file('../../experiments/cfgs/faster_rcnn_end2end_kitti_alexnet.yml')
 
     from datasets.kitti import kitti
-    imdb = kitti('train', '2012')
-    
+    # imdb = kitti('train', '2012')
+    imdb = kitti('trainval', '2012')
+
     # Apply data augmentation
     imdb.append_flipped_images()        
     # imdb.append_crop_resize_images()    
@@ -535,7 +540,7 @@ if __name__ == '__main__':
 
     plt.ion()
         
-    num_anchors = 70
+    num_anchors = 20
 
     # anchors_person = gen_anchors(imdb.roidb, 10, [1])
     # anchors_cyclist = gen_anchors(imdb.roidb, 10, [2])

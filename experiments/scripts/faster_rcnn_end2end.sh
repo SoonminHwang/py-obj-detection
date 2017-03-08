@@ -47,7 +47,7 @@ case $DATASET in
     TRAIN_IMDB="kitti_2012_trainval"
     TEST_IMDB="kitti_2012_val"
     PT_DIR="kitti"
-    CONFIG="faster_rcnn_end2end_kitti.yml"
+    CONFIG="faster_rcnn_end2end_kitti_${NET}.yml"
     #ITERS=100000
     ;;
   kitti)

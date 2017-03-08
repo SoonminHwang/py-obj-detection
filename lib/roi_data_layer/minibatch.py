@@ -145,20 +145,32 @@ def _get_input_blob(roidb, scale_inds):
     for i in xrange(num_images):
 
         n_input_types = len(roidb[i]['input'])
+
+        width = roidb[i]['width']
+        height = roidb[i]['height']
+
         for j in xrange(n_input_types):
             input_type = roidb[i]['input'][j].keys()[0]
-            input_data = cv2.imread(roidb[i]['input'][j].values()[0])
+            input_file = roidb[i]['input'][j].values()[0]
+
+  
+
+            if input_file.endswith('.png'):
+                input_data = cv2.imread(input_file)
+            else:
+                input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
+                input_data = np.asarray(input_data)
 
             if roidb[i]['flipped']:
                 input_data = _flip(input_data)
-            if roidb[i]['gamma']:
+            if roidb[i]['gamma'] and input_type != 'depth':
                 input_data = _gamma_correction(input_data)
             if roidb[i]['crop'] is not None:
                 input_data = _crop_resize(input_data, roidb[i]['crop'])
 
             target_size = cfg.TRAIN.SCALES[scale_inds[i]]
 
-            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 128.0
+            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 0.0
 
             input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
                                             cfg.TRAIN.MAX_SIZE)

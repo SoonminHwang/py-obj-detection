@@ -129,7 +129,8 @@ if __name__ == '__main__':
         average_loss=cfg.SOLVER.AVERAGE_LOSS, momentum=cfg.SOLVER.MOMENTUM, weight_decay=cfg.SOLVER.WEIGHT_DECAY, 
         snapshot=cfg.SOLVER.SNAPSHOT, iter_size=cfg.SOLVER.ITER_SIZE, 
         test_iter=cfg.SOLVER.TEST_ITER, test_interval=cfg.SOLVER.TEST_INTERVAL,
-        test_compute_loss=cfg.SOLVER.TEST_COMPUTE_LOSS, max_iter=cfg.SOLVER.MAX_ITER,
+        test_compute_loss=cfg.SOLVER.TEST_COMPUTE_LOSS, test_initialization=cfg.SOLVER.TEST_INITIALIZATION, 
+        max_iter=cfg.SOLVER.MAX_ITER,
         snapshot_prefix=snapshot_prefix, net=net)
 
     train_net(solver_file, roidb_train, roidb_val, imdb_train, output_dir,

@@ -30,9 +30,9 @@ class ProposalLayer(caffe.Layer):
         if cfg.NET.KMEANS_ANCHOR:
 
             if cfg.TRAIN.SCALES[0] == 375:
-                self._anchors = kitti_kmeans_anchors_1x()
+                self._anchors = kitti_kmeans_anchors_1x(cfg.NET.NUM_ANCHORS)
             elif cfg.TRAIN.SCALES[0] == 755:
-                self._anchors = kitti_kmeans_anchors_2x()
+                self._anchors = kitti_kmeans_anchors_2x(cfg.NET.NUM_ANCHORS)
             else:
                 raise NotImplementedError      
 

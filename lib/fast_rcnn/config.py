@@ -28,6 +28,8 @@ __C = edict()
 cfg = __C
 
 
+__C.INPUT = ['image']
+
 #
 # Solver
 #
@@ -50,7 +52,8 @@ __C.SOLVER.ITER_SIZE = 2
 
 __C.SOLVER.TEST_ITER = 10
 __C.SOLVER.TEST_INTERVAL = 15
-__C.SOLVER.TEST_COMPUTE_LOSS = "true"
+__C.SOLVER.TEST_COMPUTE_LOSS = "false"
+__C.SOLVER.TEST_INITIALIZATION = "true"
 
 __C.SOLVER.MAX_ITER = 70000
 

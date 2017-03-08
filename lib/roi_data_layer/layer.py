@@ -59,7 +59,7 @@ class RoIDataLayer(caffe.Layer):
             return self._blob_queue.get()
         else:
             db_inds = self._get_next_minibatch_inds()
-            minibatch_db = [self._roidb[i] for i in db_inds]
+            minibatch_db = [self._roidb[i] for i in db_inds]            
             return get_minibatch(minibatch_db, self._num_classes)
 
     def set_roidb(self, roidb):
@@ -98,10 +98,11 @@ class RoIDataLayer(caffe.Layer):
         idx += 1
 
         # Add depth modality
-        top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
-            max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
-        self._name_to_top_map['depth'] = idx
-        idx += 1
+        if 'depth' in cfg.INPUT:
+            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
+                max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+            self._name_to_top_map['depth'] = idx
+            idx += 1
 
         if cfg.TRAIN.HAS_RPN:
             top[idx].reshape(1, 3)

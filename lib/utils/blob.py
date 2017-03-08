@@ -21,8 +21,11 @@ def im_list_to_blob(ims):
     blob = np.zeros((num_images, max_shape[0], max_shape[1], nCh),
                     dtype=np.float32)
     for i in xrange(num_images):
-        im = ims[i]        
+        im = ims[i]
+        if nCh == 1:
+            im = im[:,:,np.newaxis]
         blob[i, 0:im.shape[0], 0:im.shape[1], :] = im
+
     # Move channels (axis 3) to axis 1
     # Axis order will become: (batch elem, channel, height, width)
     channel_swap = (0, 3, 1, 2)

@@ -22,7 +22,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-DATASET = {'kitti_train':'KITTI train/val', 'voc07_07':'PASCAL VOC train(07)/val(07)',
+DATASET = {'kitti_train':'KITTI train/val',
+       'kitti_trainval':'KITTI trainval',
+       'voc07_07':'PASCAL VOC train(07)/val(07)',
 	   'voc0712_07': 'PASCAL VOC train(07+12)/val(07)',
 	   'voc12_12': 'PASCAL VOC train(12)/val(12)',
 	   'voc0712_12': 'PASCAL VOC train(07+12)/val(12)',

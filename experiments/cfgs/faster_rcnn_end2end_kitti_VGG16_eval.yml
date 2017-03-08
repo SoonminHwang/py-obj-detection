@@ -1,23 +1,18 @@
-EXP_DIR: scale2x_kmeans70_flip_crop_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
+EXP_DIR: scale2x_kmeans70_flip_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: faster_rcnn_end2end
 
 SOLVER:
-  BASE_LR: 0.001
+  BASE_LR: 0.0005
   DISPLAY: 20
   AVERAGE_LOSS: 100
   SNAPSHOT_PREFIX: vgg16
   ITER_SIZE: 2
   STEPSIZE: 50000
-  MAX_ITER: 70000
-  TEST_ITER: 50
-  TEST_INTERVAL: 100
-  TEST_COMPUTE_LOSS: "true"
-
-  # # Without test phase, to save memory for large image inputs
-  # TEST_ITER: 0
-  # TEST_INTERVAL: 0
-  # TEST_COMPUTE_LOSS: "false"
-  # TEST_INITIALIZATION: "false"
+  MAX_ITER: 70000  
+  TEST_ITER: 0
+  TEST_INTERVAL: 0
+  TEST_COMPUTE_LOSS: "false"
+  TEST_INITIALIZATION: "false"
 
 NET:
   NUM_CLASSES: 4
@@ -36,7 +31,7 @@ TRAIN:
   
   USE_AUGMENTATION:
     FLIP: True
-    CROP: True
+    CROP: False
     GAMMA: True
 
   # scale1x

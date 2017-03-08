@@ -391,7 +391,8 @@ layer {
   param { lr_mult: 2.0 }
   convolution_param {
     #num_output: 18   # 2(bg/fg) * 9(anchors)
-    num_output: 140   # 2(bg/fg) * 70(anchors)
+    #num_output: 140   # 2(bg/fg) * 70(anchors)
+    num_output: 40   # 2(bg/fg) * 20(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -406,7 +407,8 @@ layer {
   param { lr_mult: 2.0 }
   convolution_param {
     #num_output: 36   # 4 * 9(anchors)
-    num_output: 280   # 4 * 70(anchors)
+    #num_output: 280   # 4 * 70(anchors)
+    num_output: 80   # 4 * 20(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -476,7 +478,8 @@ layer {
   bottom: 'rpn_cls_prob'
   top: 'rpn_cls_prob_reshape'
   #reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
-  reshape_param { shape { dim: 0 dim: 140 dim: -1 dim: 0 } }
+  #reshape_param { shape { dim: 0 dim: 140 dim: -1 dim: 0 } }
+  reshape_param { shape { dim: 0 dim: 40 dim: -1 dim: 0 } }
 }
 layer {
   name: 'proposal'

@@ -11,7 +11,7 @@ input_shape {
 input: "depth"
 input_shape {
   dim: 1
-  dim: 3
+  dim: 1
   dim: 224
   dim: 224
 }
@@ -205,7 +205,7 @@ layer {
   name: "concat2"
   type: "Concat"
   bottom: "pool2"
-  bottom: "pool2_2"
+  bottom: "pool2_d"
   top: "concat2"
 
   concat_param {
@@ -350,7 +350,8 @@ layer {
   top: "rpn_cls_score"
   convolution_param {
     #num_output: 18   # 2(bg/fg) * 9(anchors)
-    num_output: 140   # 2(bg/fg) * 70(anchors)
+    #num_output: 140   # 2(bg/fg) * 70(anchors)
+    num_output: 40   # 2(bg/fg) * 20(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -363,7 +364,8 @@ layer {
   top: "rpn_bbox_pred"
   convolution_param {
     #num_output: 36   # 4 * 9(anchors)
-    num_output: 280   # 4 * 70(anchors)
+    #num_output: 280   # 4 * 70(anchors)
+    num_output: 80   # 4 * 20(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -391,7 +393,8 @@ layer {
   bottom: 'rpn_cls_prob'
   top: 'rpn_cls_prob_reshape'
   #reshape_param { shape { dim: 0 dim: 18 dim: -1 dim: 0 } }
-  reshape_param { shape { dim: 0 dim: 140 dim: -1 dim: 0 } }
+  #reshape_param { shape { dim: 0 dim: 140 dim: -1 dim: 0 } }
+  reshape_param { shape { dim: 0 dim: 40 dim: -1 dim: 0 } }
 }
 layer {
   name: 'proposal'

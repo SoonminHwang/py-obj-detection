@@ -70,7 +70,11 @@ class SolverWrapper(object):
         
         blobs_out = net.forward()
 
-        im = net.blobs['data'].data[0].copy()
+        try:
+            im = net.blobs['data'].data[0].copy()
+        except:
+            im = net.blobs['image'].data[0].copy()
+
         im = im.transpose((1,2,0))  # ch x h x w -> h x w x ch
         im += cfg.PIXEL_MEANS
         im = im[:, :, (2, 1, 0)]
@@ -106,7 +110,11 @@ class SolverWrapper(object):
 
         if cfg.TEST.BBOX_REG:
             # Apply bounding-box regression deltas            
-            box_deltas = net.blobs['bbox_pred'].data.copy()
+            try:
+                box_deltas = net.blobs['bbox_pred'].data.copy()
+            except:
+                box_deltas = net.blobs['bbox_pred_depth'].data.copy()
+                
             box_deltas = box_deltas * self.bbox_stds + self.bbox_means
             # box_deltas = blobs_out['bbox_pred']
             pred_boxes = bbox_transform_inv(boxes, box_deltas)
@@ -236,7 +244,10 @@ class SolverWrapper(object):
                 filename = self.snapshot()
                 model_paths.append(filename)
                 # Visualize!                
-                self.visualize(self.solver.test_nets[0], filename)
+                if len(self.solver.test_nets) > 0:
+                    self.visualize(self.solver.test_nets[0], filename)
+                else:
+                    self.visualize(self.solver.net, filename)
                 
         if last_snapshot_iter != self.solver.iter:
             model_paths.append(self.snapshot())
@@ -248,14 +259,14 @@ def get_training_roidb(imdb, isTrain):
         print 'Appending horizontally-flipped training examples...',
         imdb.append_flipped_images()
         print 'done'
-    # if cfg.TRAIN.USE_AUGMENTATION.CROP and isTrain:
-    #     print 'Appending cropped & resized training examples...',
-    #     imdb.append_crop_resize_images()
-    #     print 'done'
-    # if cfg.TRAIN.USE_AUGMENTATION.GAMMA and isTrain:
-    #     print 'Appending photometrc transformed training examples...',
-    #     imdb.append_photometric_transformed_images()        
-    #     print 'done'
+    if cfg.TRAIN.USE_AUGMENTATION.CROP and isTrain:
+        print 'Appending cropped & resized training examples...',
+        imdb.append_crop_resize_images()
+        print 'done'
+    if cfg.TRAIN.USE_AUGMENTATION.GAMMA and isTrain:
+        print 'Appending photometrc transformed training examples...',
+        imdb.append_photometric_transformed_images()        
+        print 'done'
 
     print 'Preparing training data...'
     rdl_roidb.prepare_roidb(imdb)

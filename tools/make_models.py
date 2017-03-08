@@ -15,8 +15,9 @@ def write_solver(output_dir, base_lr=0.01, momentum=0.9, test_iter=10, test_inte
     sp['momentum'] = str(momentum)
 
     # speed
-    sp['test_iter'] = str(test_iter)
-    sp['test_interval'] = str(test_interval)
+    if test_iter != 0 and test_interval != 0:
+    	sp['test_iter'] = str(test_iter)
+    	sp['test_interval'] = str(test_interval)
 
     # looks
     sp['display'] = str(display)

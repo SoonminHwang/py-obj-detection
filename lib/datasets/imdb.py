@@ -12,6 +12,7 @@ from utils.cython_bbox import bbox_overlaps
 import numpy as np
 import scipy.sparse
 from fast_rcnn.config import cfg
+import numpy.random as npr
 
 class imdb(object):
     """Image database."""
@@ -98,6 +99,8 @@ class imdb(object):
     def _get_widths(self):
       return [PIL.Image.open(self.image_path_at(i)).size[0]
               for i in xrange(self.num_images)]
+    def _get_heights(self):
+        return [PIL.Image.open(self.image_path_at(i)).size[1] for i in xrange(self.num_images)]
 
     def append_flipped_images(self):
         num_images = self.num_images

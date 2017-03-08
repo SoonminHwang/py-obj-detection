@@ -27,7 +27,7 @@ lib_path = osp.join(osp.dirname(__file__), '..', '..', '..', '..', 'lib')
 if lib_path not in sys.path: sys.path.insert(0, lib_path)
 
 from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
-from fast_rcnn.test import im_detect
+from fast_rcnn.test import im_detect, im_detect_depth
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 import matplotlib.pyplot as plt
@@ -75,22 +75,48 @@ def parse_args():
     return args
 
 
-def demo(net, image_name, conf_thres, nms_thres, iter):
+def demo(net, input_names, conf_thres, nms_thres, iter):
     """Detect object classes in an image using pre-computed object proposals."""
     global CLASSES
 
     # Load the demo image
-    im_file = image_name
-    im = cv2.imread(im_file)
-    fname = os.path.basename(image_name)
+    # im_file = image_name
+
+    im = cv2.imread(input_names[0])
+    fname = os.path.basename(input_names[0])
 
     # Detect all object classes and regress object bounds
     # timers
     _t = {'im_detect' : Timer(), 'misc' : Timer()}
 
-    _t['im_detect'].tic()
-    scores, boxes = im_detect(net, im)
-    _t['im_detect'].toc()
+    if 'depth' in cfg.INPUT:
+        height, width = im.shape[:2]
+        dp = np.memmap(input_names[1], dtype=np.float32, shape=(height, width))
+        dp = np.asarray(dp)
+        ims = [im, dp]
+
+        fig, axes = plt.add_subplots(2,2)
+
+        axes[0][0].imshow(im)
+        axes[0][0].axis('off')
+        axes[0][1].imshow(dp)
+        axes[0][1].axis('off')
+        axes[1][0].imshow(dp)
+        axes[1][0].axis('off')
+
+        plt.savefig('test_align.png', dpi=200)
+
+        import ipdb
+        ipdb.set_trace()
+
+
+        _t['im_detect'].tic()
+        scores, boxes = im_detect_depth(net, ims)
+        _t['im_detect'].toc()
+    else:
+        _t['im_detect'].tic()
+        scores, boxes = im_detect(net, im)
+        _t['im_detect'].toc()
     
     
     _t['misc'].tic()    
@@ -132,8 +158,9 @@ def demo(net, image_name, conf_thres, nms_thres, iter):
     axe.axis('off')    
     plt.gca().legend()
 
-    save_name = os.path.basename(im_file)
-    plt.savefig('[DEMO_iter_%d]' % iter + save_name, dpi=200)  
+    # save_name = os.path.basename(input_names[0])    
+    # plt.savefig('[DEMO_iter_%d]' % iter + save_name, dpi=200)  
+    plt.savefig('[DEMO_iter_%d]' % iter + fname, dpi=200)  
 
     return _t
        
@@ -187,23 +214,26 @@ if __name__ == '__main__':
     CLASSES = imdb.classes 
 
     # Warmup on a dummy image
-    im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
-    for i in xrange(2):
-        _, _= im_detect(net, im)
+    # im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
+    # for i in xrange(2):
+    #     _, _= im_detect(net, im)
 
     if not args.demo_dir:
         # demo from imdb
         for ii in np.random.choice(imdb.num_images, 5):
-            im_name = imdb.image_path_at(ii)
-            timer = demo(net, im_name, args.conf_thres, args.nms_thres, model_iter)
-            print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s'.format(os.path.basename(im_name), ii + 1, 
+            im_names = [ imdb.image_path_at(ii) ]
+            if 'depth' in cfg.INPUT:
+                im_names.append( imdb.depth_path_at(ii) )            
+            timer = demo(net, im_names, args.conf_thres, args.nms_thres, model_iter)
+            print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s'.format(os.path.basename(im_names[0]), ii + 1, 
                 imdb.num_images, timer['im_detect'].average_time, 
                 timer['misc'].average_time)
 
     else:
         # demo from images
         im_names = glob.glob( os.path.join(args.demo_dir, '*.png') )
-        for im_name in im_names:
-            timer = demo(net, im_name, args.conf_thres, args.nms_thres, model_iter)
+        dp_names = glob.glob( os.path.join(args.demo_dir, '*.bin') )
+        for im_name, dp_name in zip(im_names, dp_names):            
+            timer = demo(net, [im_name, dp_name], args.conf_thres, args.nms_thres, model_iter)
             print '[im_detect, {:s}]: {:.3f}s {:.3f}s'.format(os.path.basename(im_name), 
                 timer['im_detect'].average_time, timer['misc'].average_time)      
