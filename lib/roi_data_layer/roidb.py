@@ -20,9 +20,10 @@ def prepare_roidb(imdb):
     each ground-truth box. The class with maximum overlap is also
     recorded.
     """
-    sizes = [PIL.Image.open(imdb.image_path_at(i)).size
-             for i in xrange(imdb.num_images)]
+    # sizes = [PIL.Image.open(imdb.image_path_at(i)).size
+             # for i in xrange(imdb.num_images)]
     roidb = imdb.roidb
+
     for i in xrange(len(imdb.image_index)):
 
         # roidb[i]['image'] = imdb.image_path_at(i)
@@ -36,8 +37,9 @@ def prepare_roidb(imdb):
             input_file = imdb.input_path_at[n](i)
             roidb[i]['input'].append( {input_type: input_file} )
             
-        roidb[i]['width'] = sizes[i][0]
-        roidb[i]['height'] = sizes[i][1]
+        # roidb[i]['width'] = sizes[i][0]
+        # roidb[i]['height'] = sizes[i][1]
+
         # need gt_overlaps as a dense array for argmax
         gt_overlaps = roidb[i]['gt_overlaps'].toarray()
         # max overlap with gt over classes (columns)
@@ -61,7 +63,9 @@ def add_bbox_regression_targets(roidb):
 
     num_images = len(roidb)
     # Infer number of classes from the number of columns in gt_overlaps
-    num_classes = roidb[0]['gt_overlaps'].shape[1]
+    # num_classes = roidb[0]['gt_overlaps'].shape[1]
+    num_classes = roidb[0]['gt_overlaps'].shape[1] - 1      # Exclude ignore class
+
     for im_i in xrange(num_images):
         rois = roidb[im_i]['boxes']
         max_overlaps = roidb[im_i]['max_overlaps']

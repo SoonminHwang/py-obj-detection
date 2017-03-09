@@ -112,7 +112,9 @@ class imdb(object):
             boxes[:, 0] = widths[i] - oldx2 - 1
             boxes[:, 2] = widths[i] - oldx1 - 1
             assert (boxes[:, 2] >= boxes[:, 0]).all()
-            entry = {'boxes' : boxes,
+            entry = {'width' : self.roidb[i]['width'],
+                     'height' : self.roidb[i]['height'],
+                     'boxes' : boxes,
                      'gt_overlaps' : self.roidb[i]['gt_overlaps'],
                      'gt_classes' : self.roidb[i]['gt_classes'],
                      'flipped' : True,
@@ -126,7 +128,9 @@ class imdb(object):
         num_images = self.num_images
 
         for i in xrange(num_images):                    
-            entry = {'boxes' : self.roidb[i]['boxes'],
+            entry = {'width' : self.roidb[i]['width'],
+                     'height' : self.roidb[i]['height'],
+                     'boxes' : self.roidb[i]['boxes'],
                      'gt_overlaps' : self.roidb[i]['gt_overlaps'],
                      'gt_classes' : self.roidb[i]['gt_classes'],
                      'flipped' : self.roidb[i]['flipped'],
@@ -162,7 +166,9 @@ class imdb(object):
             boxes[:, 3] = ( boxes[:, 3] - h_off ) / scale            
                         
             assert (boxes[:, 2] >= boxes[:, 0]).all()
-            entry = {'boxes' : boxes,
+            entry = {'width' : self.roidb[i]['width'],
+                     'height' : self.roidb[i]['height'],
+                     'boxes' : boxes,
                      'gt_overlaps' : self.roidb[i]['gt_overlaps'],
                      'gt_classes' : self.roidb[i]['gt_classes'],
                      'flipped' : self.roidb[i]['flipped'],

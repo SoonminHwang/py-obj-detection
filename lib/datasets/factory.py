@@ -11,7 +11,8 @@ __sets = {}
 
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
-from datasets.kitti import kitti
+# from datasets.kitti import kitti
+from datasets.kitti_raw import kitti
 
 import numpy as np
 

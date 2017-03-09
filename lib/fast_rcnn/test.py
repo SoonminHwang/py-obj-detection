@@ -367,7 +367,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=No
 
             _t['misc'].tic()
             # skip j = 0, because it's the background class
-            for j in xrange(1, imdb.num_classes):
+            for j in xrange(1, imdb.num_classes-1):
                 inds = np.where(scores[:, j] > thresh)[0]
                 cls_scores = scores[inds, j]
                 cls_boxes = boxes[inds, j*4:(j+1)*4]
@@ -382,7 +382,7 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=No
             # Limit to max_per_image detections *over all classes*
             if max_per_image > 0:
                 image_scores = np.hstack([all_boxes[j][i][:, -1]
-                                          for j in xrange(1, imdb.num_classes)])
+                                          for j in xrange(1, imdb.num_classes-1)])
                 if len(image_scores) > max_per_image:
                     image_thresh = np.sort(image_scores)[-max_per_image]
                     for j in xrange(1, imdb.num_classes):

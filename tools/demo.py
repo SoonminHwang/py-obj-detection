@@ -211,7 +211,7 @@ if __name__ == '__main__':
     imdb = get_imdb(IMDB_NAMES[args.imdb])
     print 'imdb: %s' % imdb.name
     global CLASSES
-    CLASSES = imdb.classes 
+    CLASSES = imdb.classes[:-1]
 
     # Warmup on a dummy image
     # im = 128 * np.ones((300, 500, 3), dtype=np.uint8)

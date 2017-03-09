@@ -141,7 +141,7 @@ class SolverWrapper(object):
 
         # skip j = 0, because it's the background class
         n_det = 0
-        for j in xrange(1, imdb.num_classes):
+        for j in xrange(1, imdb.num_classes - 1):
             inds = np.where(scores[:, j] > thresh)[0]
             cls_scores = scores[inds, j]
             cls_boxes = pred_boxes[inds, j*4:(j+1)*4]
@@ -265,7 +265,13 @@ def get_training_roidb(imdb, isTrain):
         print 'done'
     if cfg.TRAIN.USE_AUGMENTATION.GAMMA and isTrain:
         print 'Appending photometrc transformed training examples...',
-        imdb.append_photometric_transformed_images()        
+        imdb.append_photometric_transformed_images()
+        print 'done'
+    if isTrain:
+        print 'Appending ped/cyc training examples...',
+        imdb.append_ped_cyc_images()       
+        print 'Appending ped/cyc training examples...',
+        imdb.append_ped_cyc_images()       
         print 'done'
 
     print 'Preparing training data...'

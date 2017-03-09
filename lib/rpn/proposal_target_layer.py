@@ -63,7 +63,7 @@ class ProposalTargetLayer(caffe.Layer):
         # targets
         labels, rois, bbox_targets, bbox_inside_weights = _sample_rois(
             all_rois, gt_boxes, fg_rois_per_image,
-            rois_per_image, self._num_classes)
+            rois_per_image, self._num_classes)      # Exclude ignore class
 
         if DEBUG:
             print 'num fg: {}'.format((labels > 0).sum())
@@ -122,8 +122,11 @@ def _get_bbox_regression_labels(bbox_target_data, num_classes):
     inds = np.where(clss > 0)[0]
     for ind in inds:
         cls = clss[ind]
+        # if cls == 4: continue   # ignore
+
         start = 4 * cls
         end = start + 4
+
         bbox_targets[ind, start:end] = bbox_target_data[ind, 1:]
         bbox_inside_weights[ind, start:end] = cfg.TRAIN.BBOX_INSIDE_WEIGHTS
     return bbox_targets, bbox_inside_weights

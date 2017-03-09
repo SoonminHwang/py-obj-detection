@@ -85,6 +85,8 @@ def get_minibatch(roidb, num_classes):
             blobs['bbox_outside_weights'] = \
                 np.array(bbox_inside_blob > 0).astype(np.float32)
 
+    # For debug visualizations
+    # _vis_minibatch_rpn(input_blobs, roidb)
     return blobs
 
 def _sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
@@ -145,21 +147,22 @@ def _get_input_blob(roidb, scale_inds):
     for i in xrange(num_images):
 
         n_input_types = len(roidb[i]['input'])
-
+                
         width = roidb[i]['width']
         height = roidb[i]['height']
-
+        
         for j in xrange(n_input_types):
             input_type = roidb[i]['input'][j].keys()[0]
             input_file = roidb[i]['input'][j].values()[0]
 
   
-
             if input_file.endswith('.png'):
                 input_data = cv2.imread(input_file)
             else:
-                input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
-                input_data = np.asarray(input_data)
+                input_data = np.load(input_file)
+                input_data[input_data == -1] = 0
+                # input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
+                # input_data = np.asarray(input_data)
 
             if roidb[i]['flipped']:
                 input_data = _flip(input_data)
@@ -235,6 +238,45 @@ def _get_bbox_regression_labels(bbox_target_data, num_classes):
         bbox_targets[ind, start:end] = bbox_target_data[ind, 1:]
         bbox_inside_weights[ind, start:end] = cfg.TRAIN.BBOX_INSIDE_WEIGHTS
     return bbox_targets, bbox_inside_weights
+
+def _vis_minibatch_rpn(blobs, roidb):
+    import matplotlib.pyplot as plt
+    
+    plt.ion()
+
+    im = blobs[0]['image'][0, :, :, :].transpose((1,2,0)).copy()
+    im += cfg.PIXEL_MEANS
+    im = im[:, :, (2,1,0)]
+    im = im.astype(np.uint8)
+
+    boxes = blobs[0]['gt_boxes']
+
+    plt.figure(1)
+    plt.clf()
+    plt.imshow(im)
+    axe = plt.gca()
+
+    import seaborn as sns
+    clrs = sns.color_palette("Set2", 5)    
+    for box in boxes:
+        clr = clrs[int(box[-1])]
+        axe.add_patch( 
+            plt.Rectangle((box[0], box[1]), box[2]-box[0], box[3]-box[1], 
+                fill=False, edgecolor=clr, linewidth=3, label='%s' % box[-1])
+        )
+
+    axe.axis('off')
+    plt.legend()
+    plt.show()
+    plt.pause(1)
+    
+
+    import ipdb
+    ipdb.set_trace()
+
+    plt.ioff()
+
+
 
 def _vis_minibatch(im_blob, rois_blob, labels_blob, overlaps):
     """Visualize a mini-batch for debugging."""
