@@ -64,13 +64,12 @@ class kitti(imdb):
         # ['Van', 'Truck', 'Person_sitting'] classes are marked as 
         #   ['Car', Car', 'Pedestrian'] respectively for convenience      
         
-        # categories = ['Pedestrian', 'Cyclist', 'Car', 'Ignore']
-        categories = ['Pedestrian', 'Cyclist', 'Ignore']
+        categories = ['Pedestrian', 'Cyclist', 'Car', 'Ignore']       
         self._cat_maps = {  'Pedestrian': categories[0],
                             'Person_sitting': categories[0],
                               'Cyclist': categories[1],
-                              'Car': categories[-1],         # Exclude!
-                              'Van': categories[-1],         # Exclude!
+                              'Car': categories[2],         
+                              'Van': categories[2],         
                               'Truck': categories[-1],       # Exclude!
                               'Tram': categories[-1],
                               'Misc': categories[-1],
