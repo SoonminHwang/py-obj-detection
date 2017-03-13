@@ -1,8 +1,9 @@
-name: "ZF"
+name: "ZF_depth5"
 layer {
   name: 'input-data'
   type: 'Python'
   top: 'image'
+  top: 'depth'
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
@@ -19,6 +20,7 @@ layer {
   name: 'input-data'
   type: 'Python'
   top: 'image'
+  top: 'depth'
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
@@ -31,20 +33,18 @@ layer {
   }  
 }
 
-#========= conv1-conv5 ============
+#========= conv1-conv5 for image ============
 
 layer {
 	name: "conv1"
 	type: "Convolution"
 	bottom: "image"
-	top: "conv1"
-	param { lr_mult: 1.0 }
-	param { lr_mult: 2.0 }
+	top: "conv1"	
 	convolution_param {
 		num_output: 96
 		kernel_size: 7
 		pad: 3
-		stride: 2
+		stride: 2    
 	}
 }
 layer {
@@ -123,6 +123,7 @@ layer {
 		pool: MAX
 	}
 }
+
 layer {
 	name: "conv3"
 	type: "Convolution"
@@ -184,12 +185,208 @@ layer {
 	top: "conv5"
 }
 
+
+#========= conv1-conv5 for depth ============
+
+layer {
+  name: "conv1_d"
+  type: "Convolution"
+  bottom: "depth"
+  top: "conv1_d"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  convolution_param {
+    num_output: 96
+    kernel_size: 7
+    pad: 3
+    stride: 2
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+layer {
+  name: "relu1_d"
+  type: "ReLU"
+  bottom: "conv1_d"
+  top: "conv1_d"
+}
+layer {
+  name: "norm1_d"
+  type: "LRN"
+  bottom: "conv1_d"
+  top: "norm1_d"
+  lrn_param {
+    local_size: 3
+    alpha: 0.00005
+    beta: 0.75
+    norm_region: WITHIN_CHANNEL
+    engine: CAFFE
+  }
+}
+layer {
+  name: "pool1_d"
+  type: "Pooling"
+  bottom: "norm1_d"
+  top: "pool1_d"
+  pooling_param {
+    kernel_size: 3
+    stride: 2
+    pad: 1
+    pool: MAX
+  }
+}
+layer {
+  name: "conv2_d"
+  type: "Convolution"
+  bottom: "pool1_d"
+  top: "conv2_d"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  convolution_param {
+    num_output: 256
+    kernel_size: 5
+    pad: 2
+    stride: 2
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+layer {
+  name: "relu2_d"
+  type: "ReLU"
+  bottom: "conv2_d"
+  top: "conv2_d"
+}
+layer {
+  name: "norm2_d"
+  type: "LRN"
+  bottom: "conv2_d"
+  top: "norm2_d"
+  lrn_param {
+    local_size: 3
+    alpha: 0.00005
+    beta: 0.75
+    norm_region: WITHIN_CHANNEL
+    engine: CAFFE
+  }
+}
+layer {
+  name: "pool2_d"
+  type: "Pooling"
+  bottom: "norm2_d"
+  top: "pool2_d"
+  pooling_param {
+    kernel_size: 3
+    stride: 2
+    pad: 1
+    pool: MAX
+  }
+}
+
+layer {
+  name: "conv3_d"
+  type: "Convolution"
+  bottom: "pool2_d"
+  top: "conv3_d"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  convolution_param {
+    num_output: 384
+    kernel_size: 3
+    pad: 1
+    stride: 1
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+layer {
+  name: "relu3_d"
+  type: "ReLU"
+  bottom: "conv3_d"
+  top: "conv3_d"
+}
+layer {
+  name: "conv4_d"
+  type: "Convolution"
+  bottom: "conv3_d"
+  top: "conv4_d"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  convolution_param {
+    num_output: 384
+    kernel_size: 3
+    pad: 1
+    stride: 1
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+layer {
+  name: "relu4_d"
+  type: "ReLU"
+  bottom: "conv4_d"
+  top: "conv4_d"
+}
+layer {
+  name: "conv5_d"
+  type: "Convolution"
+  bottom: "conv4_d"
+  top: "conv5_d"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  convolution_param {
+    num_output: 256
+    kernel_size: 3
+    pad: 1
+    stride: 1
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+layer {
+  name: "relu5_d"
+  type: "ReLU"
+  bottom: "conv5_d"
+  top: "conv5_d"
+}
+
+#========= Late-fusion (concat after conv5) ============
+layer {
+  name: "concat"
+  type: "Concat"
+  bottom: "conv5"
+  bottom: "conv5_d"
+  top: "conv5_concat"
+  concat_param {
+    axis: 1
+  }
+}
+
+
+layer {
+  name: "conv5_concat_conv"
+  type: "Convolution"
+  bottom: "conv5_concat"
+  top: "conv5_concat_conv"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  convolution_param {
+    num_output: 256   # (256+256)-dim --> 256-dim
+    kernel_size: 1
+    pad: 0
+    stride: 1
+
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
+  }
+}
+
 #========= RPN ============
 
 layer {
   name: "rpn_conv/3x3"
   type: "Convolution"
-  bottom: "conv5"
+  bottom: "conv5_concat_conv"
   top: "rpn/output"
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
@@ -293,7 +490,8 @@ layer {
   type: 'Python'
   bottom: 'rpn_cls_score'
   bottom: 'gt_boxes'
-  bottom: 'im_info'  
+  bottom: 'im_info'
+  bottom: 'image'  
   top: 'rpn_labels'
   top: 'rpn_bbox_targets'
   top: 'rpn_bbox_inside_weights'
@@ -394,7 +592,7 @@ layer {
 layer {
   name: "roi_pool_conv5"
   type: "ROIPooling"
-  bottom: "conv5"
+  bottom: "conv5_concat_conv"
   bottom: "rois"
   top: "roi_pool_conv5"
   roi_pooling_param {
