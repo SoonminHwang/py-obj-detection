@@ -181,8 +181,7 @@ class AnchorTargetLayer(caffe.Layer):
         ### Handle objects that will be ignored in optimization process
         # ignIdx = np.where( gt_boxes[ argmax_overlaps, -1 ] == 4 )        
         # labels[ignIdx] = -1
-        # if np.any( gt_boxes[ argmax_overlaps, -1 ] == 4 ):      # __background__, Ped, Cyc, Car
-        if np.any( gt_boxes[ argmax_overlaps, -1 ] == 3 ):      # __background__, Ped, Cyc
+        if np.any( gt_boxes[ argmax_overlaps, -1 ] == 4 ):
             import ipdb
             ipdb.set_trace()            
         # labels[ gt_boxes[ argmax_overlaps, -1 ] == 4 ] = -1
