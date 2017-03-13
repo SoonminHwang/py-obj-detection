@@ -64,16 +64,27 @@ class kitti(imdb):
         # ['Van', 'Truck', 'Person_sitting'] classes are marked as 
         #   ['Car', Car', 'Pedestrian'] respectively for convenience      
         
-        categories = ['Pedestrian', 'Cyclist', 'Car', 'Ignore']
+        # categories = ['Pedestrian', 'Cyclist', 'Car', 'Ignore']
+        categories = ['Pedestrian', 'Cyclist', 'Ignore']
         self._cat_maps = {  'Pedestrian': categories[0],
                             'Person_sitting': categories[0],
                               'Cyclist': categories[1],
-                              'Car': categories[2],
-                              'Van': categories[2],
-                              'Truck': categories[3],       # Exclude!
-                              'Tram': categories[3],
-                              'Misc': categories[3],
-                              'DontCare': categories[3] }
+                              'Car': categories[-1],         # Exclude!
+                              'Van': categories[-1],         # Exclude!
+                              'Truck': categories[-1],       # Exclude!
+                              'Tram': categories[-1],
+                              'Misc': categories[-1],
+                              'DontCare': categories[-1] }
+
+        # self._cat_maps = {  'Pedestrian': categories[0],
+        #                     'Person_sitting': categories[0],
+        #                       'Cyclist': categories[1],
+        #                       'Car': categories[2],
+        #                       'Van': categories[2],
+        #                       'Truck': categories[3],       # Exclude!
+        #                       'Tram': categories[3],
+        #                       'Misc': categories[3],
+        #                       'DontCare': categories[3] }
 
         self._classes = tuple(['__background__'] + categories)
         # self._raw_cat_ids = self._KITTI.getCatIds(catNms=categories)
