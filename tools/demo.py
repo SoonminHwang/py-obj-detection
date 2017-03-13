@@ -91,23 +91,25 @@ def demo(net, input_names, conf_thres, nms_thres, iter):
 
     if 'depth' in cfg.INPUT:
         height, width = im.shape[:2]
-        dp = np.memmap(input_names[1], dtype=np.float32, shape=(height, width))
-        dp = np.asarray(dp)
+	dp = np.load(input_names[1])
+	dp[dp == -1] = 0
+	#        dp = np.memmap(input_names[1], dtype=np.float32, shape=(height, width))
+	#        dp = np.asarray(dp)
         ims = [im, dp]
 
-        fig, axes = plt.add_subplots(2,2)
+	#        fig, axes = plt.add_subplots(2,2)
 
-        axes[0][0].imshow(im)
-        axes[0][0].axis('off')
-        axes[0][1].imshow(dp)
-        axes[0][1].axis('off')
-        axes[1][0].imshow(dp)
-        axes[1][0].axis('off')
+	#        axes[0][0].imshow(im)
+	#        axes[0][0].axis('off')
+	#        axes[0][1].imshow(dp)
+	#        axes[0][1].axis('off')
+	#        axes[1][0].imshow(dp)
+	#        axes[1][0].axis('off')
 
-        plt.savefig('test_align.png', dpi=200)
+	#        plt.savefig('test_align.png', dpi=200)
 
-        import ipdb
-        ipdb.set_trace()
+	#        import ipdb
+	#        ipdb.set_trace()
 
 
         _t['im_detect'].tic()

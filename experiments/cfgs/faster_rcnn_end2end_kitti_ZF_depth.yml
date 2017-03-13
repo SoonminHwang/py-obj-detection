@@ -1,4 +1,5 @@
-EXP_DIR: scale2x_kmeans20_flip_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
+EXP_DIR: rawImdb_PedCyc2x_depth0_velo_scale2x_kmeans20_flip_gamma_stepsize_100k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
+#EXP_DIR: scale2x_kmeans20_flip_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: scale1x_kmeans70_flip_crop_gamma_stepsize_70k_maxiter_100k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: scale2x_kmeans70_stepsize_100k_maxiter_140k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: initialized_with_pascal_voc_final_model
@@ -12,13 +13,15 @@ SOLVER:
   AVERAGE_LOSS: 100
   SNAPSHOT_PREFIX: zf
   ITER_SIZE: 2
-  STEPSIZE: 50000
-  MAX_ITER: 70000
+  STEPSIZE: 70000
+  MAX_ITER: 100000
 
+  # TEST_ITER: 50
+  # TEST_INTERVAL: 100  
   TEST_ITER: 50
-  TEST_INTERVAL: 100  
-  TEST_COMPUTE_LOSS: "true"
-  TEST_INITIALIZATION: "true"
+  TEST_INTERVAL: 0
+  TEST_COMPUTE_LOSS: "false"
+  TEST_INITIALIZATION: "false"
 
 NET:
   NUM_CLASSES: 4
@@ -48,6 +51,11 @@ TRAIN:
   SCALES: [755]
   MAX_SIZE: 2500
 
+  # scale4x
+  # SCALES: [1510]
+  # MAX_SIZE: 5000
+
+
 TEST:
   HAS_RPN: True
 
@@ -58,3 +66,7 @@ TEST:
   # scale2x
   SCALES: [755]
   MAX_SIZE: 2500
+
+  # scale4x
+  # SCALES: [1510]
+  # MAX_SIZE: 5000

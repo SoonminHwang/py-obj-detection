@@ -50,12 +50,12 @@ TRAIN:
   # MAX_SIZE: 1500
 
   # scale2x
-  # SCALES: [755]
-  # MAX_SIZE: 2500
+  SCALES: [755]
+  MAX_SIZE: 2500
 
   # scale4x
-  SCALES: [1510]
-  MAX_SIZE: 5000
+  # SCALES: [1510]
+  # MAX_SIZE: 5000
 
   # scale8x
   # SCALES: [3020]
@@ -69,12 +69,12 @@ TEST:
   # MAX_SIZE: 1500
 
   # scale2x
-  # SCALES: [755]
-  # MAX_SIZE: 2500
+  SCALES: [755]
+  MAX_SIZE: 2500
 
   # scale4x
-  SCALES: [1510]
-  MAX_SIZE: 5000
+  # SCALES: [1510]
+  # MAX_SIZE: 5000
 
   # scale8x
   # SCALES: [3020]

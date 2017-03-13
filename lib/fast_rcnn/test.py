@@ -353,8 +353,10 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=No
 
             if 'depth' in cfg.INPUT:
                 height, width = im.shape[:2]
-                dp = np.memmap(imdb.depth_path_at(i), dtype=np.float32, shape=(height, width))
-                dp = np.asarray(dp)
+		dp = np.load(imdb.depth_path_at(i))
+		dp[dp == -1] = 0
+                #dp = np.memmap(imdb.depth_path_at(i), dtype=np.float32, shape=(height, width))
+                #dp = np.asarray(dp)
                 ims = [im, dp]
 
                 _t['im_detect'].tic()
