@@ -1,0 +1,28 @@
+name: "TestLayer"
+
+input: "image"
+input_shape {
+  dim: 1
+  dim: 3
+  dim: 375
+  dim: 1242
+}
+
+
+layer {
+  name: "upsample2x"
+  type: "Deconvolution"
+  bottom: "image"
+  top: "upsample2x"  
+  convolution_param {
+    num_output: 3
+    group: 3
+    bias_term: false
+    pad: 1
+    kernel_size: 4
+    stride: 2
+    weight_filler {
+      type: "bilinear"
+    }    
+  }
+}
