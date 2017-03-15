@@ -228,7 +228,10 @@ class kitti(imdb):
         # fileName = im_ann['file_name'].replace('png', 'bin')
         # image_path = osp.join(self._data_path, 'depths', self._data_name, fileName)
         # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'disparity_2', '%06d.bin' % index)
-        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap', '%06d.npy' % index)
+        
+        ## Old version (not metric depth)
+        # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap', '%06d.npy' % index)
+        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap_memmap', '%06d.bin' % index)
 
         assert osp.exists(depth_file), \
                 'Path does not exist: {}'.format(depth_file)
