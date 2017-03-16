@@ -377,6 +377,7 @@ layer {
   type: 'Python'
   bottom: 'rpn_rois'
   bottom: 'gt_boxes'
+  bottom: 'im_info'
   top: 'rois'
   top: 'labels'
   top: 'bbox_targets'
@@ -388,6 +389,29 @@ layer {
     param_str: "'num_classes': 4"    
   }
 }
+
+layer {
+  name: 'croi-data'
+  type: 'Python'
+  bottom: 'rpn_rois'
+  bottom: 'gt_boxes'
+  bottom: 'im_info'
+  top: 'crois'
+  top: 'clabels'
+  top: 'cbbox_targets'
+  top: 'cbbox_inside_weights'
+  top: 'cbbox_outside_weights'
+  python_param {
+    module: 'rpn.proposal_target_layer'
+    layer: 'ProposalTargetLayer'
+    param_str: "\{'num_classes': 4, 'context_scale': 1.5\}"
+  }
+}
+
+layer {  type: 'Silence'  name: 'clabels_silence'  bottom: 'clabels'  }
+layer {  type: 'Silence'  name: 'cbbox_targets_silence'  bottom: 'cbbox_targets'  }
+layer {  type: 'Silence'  name: 'cbbox_inside_weights_silence'  bottom: 'cbbox_inside_weights'  }
+layer {  type: 'Silence'  name: 'cbbox_outside_weights_silence'  bottom: 'cbbox_outside_weights'  }
 
 #========= RCNN ============
 
@@ -405,15 +429,39 @@ layer {
 }
 
 layer {
+  name: "roi_pool_conv5_context"
+  type: "ROIPooling"
+  bottom: "conv5"
+  bottom: "crois"
+  top: "roi_pool_conv5_context"
+  roi_pooling_param {
+    pooled_w: 6
+    pooled_h: 6
+    spatial_scale: 0.0625 # 1/16
+  }
+}
+
+layer {
+  name: "roi_pool_conv5_concat"
+  type: "Concat"
+  bottom: "roi_pool_conv5"
+  bottom: "roi_pool_conv5_context"
+  top: "roi_pool_conv5_concat"
+  concat_param {
+    axis: 1
+  }
+}
+
+layer {
   name: "upsample2x"
   type: "Deconvolution"
-  bottom: "roi_pool_conv5"
+  bottom: "roi_pool_conv5_concat"
   top: "roi_pool_conv5_2x"  
 
   param { lr_mult: 0.0 }
   convolution_param {
-    num_output: 3
-    group: 3
+    num_output: 512
+    group: 512
     bias_term: false
     pad: 1
     kernel_size: 4

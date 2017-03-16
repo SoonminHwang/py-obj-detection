@@ -8,6 +8,27 @@ input_shape {
   dim: 1242
 }
 
+input: "roi"
+input_shape {
+  dim: 2
+  dim: 1
+  dim: 5
+}
+
+layer {
+  name: "roi_pool"
+  type: "ROIPooling"
+  bottom: "image"
+  bottom: "roi"
+  top: "roi_pool"
+  roi_pooling_param {
+    pooled_w: 100
+    pooled_h: 100
+    spatial_scale: 1
+    #spatial_scale: 0.0625 # 1/16
+  }
+}
+
 
 layer {
   name: "upsample2x"

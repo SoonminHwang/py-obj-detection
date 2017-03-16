@@ -25,6 +25,11 @@ class ProposalTargetLayer(caffe.Layer):
         layer_params = yaml.load(self.param_str)
         self._num_classes = layer_params['num_classes']
 
+        if 'context_scale' in layer_params:
+            self._context_scale = layer_params['context_scale']
+        else:
+            self._context_scale = 1
+
         # sampled rois (0, x1, y1, x2, y2)
         top[0].reshape(1, 5)
         # labels
@@ -44,6 +49,10 @@ class ProposalTargetLayer(caffe.Layer):
         # TODO(rbg): it's annoying that sometimes I have extra info before
         # and other times after box coordinates -- normalize to one format
         gt_boxes = bottom[1].data
+
+        # Apply context pooling
+        im_info = bottom[2].data[0, :]
+        gt_boxes = _rescale_box(gt_boxes, im_info)
 
         # Include ground-truth boxes in the set of candidate rois
         zeros = np.zeros((gt_boxes.shape[0], 1), dtype=gt_boxes.dtype)
@@ -102,6 +111,24 @@ class ProposalTargetLayer(caffe.Layer):
     def reshape(self, bottom, top):
         """Reshaping happens during the call to forward."""
         pass
+
+    def _rescale_box(self, boxes, im_shape):
+
+        N = len(boxes)
+
+        ct_x = ( boxes[:, 2] + boxes[:,0] ) / 2
+        ct_y = ( boxes[:, 3] + boxes[:,1] ) / 2
+
+        width_half = ( boxes[:, 2] - boxes[:,0] + 1 ) / 2
+        height_half = ( boxes[:, 3] - boxes[:,1] + 1 ) / 2
+        
+        new_x1 = max( 0, ct_x - width_half * self._context_scale )
+        new_y1 = max( 0, ct_y - height_half * self._context_scale )
+
+        new_x2 = min( im_shape[1]-1, ct_x + width_half * self._context_scale )
+        new_y2 = min( im_shape[0]-1, ct_y + height_half * self._context_scale )
+
+        return np.hstack( (new_x1, new_y1, new_x2, new_y2) )
 
 
 def _get_bbox_regression_labels(bbox_target_data, num_classes):

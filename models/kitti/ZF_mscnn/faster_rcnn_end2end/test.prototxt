@@ -285,6 +285,20 @@ layer {
   }
 }
 
+layer {
+  name: 'proposal-context'
+  type: 'Python'
+  bottom: 'rpn_cls_prob_reshape'
+  bottom: 'rpn_bbox_pred'
+  bottom: 'im_info'
+  top: 'crois'
+  python_param {
+    module: 'rpn.proposal_layer'
+    layer: 'ProposalLayer'
+    param_str: "\{'feat_stride': 16, 'context_scale': 1.5\}"
+  }
+}
+
 #========= RCNN ============
 
 layer {
@@ -300,15 +314,41 @@ layer {
   }
 }
 
+
+layer {
+  name: "roi_pool_conv5_context"
+  type: "ROIPooling"
+  bottom: "conv5"
+  bottom: "crois"
+  top: "roi_pool_conv5_context"
+  roi_pooling_param {
+    pooled_w: 6
+    pooled_h: 6
+    spatial_scale: 0.0625 # 1/16
+  }
+}
+
+
+layer {
+  name: "roi_pool_conv5_concat"
+  type: "Concat"
+  bottom: "roi_pool_conv5"
+  bottom: "roi_pool_conv5_context"
+  top: "roi_pool_conv5_concat"
+  concat_param {
+    axis: 1
+  }
+}
+
 layer {
   name: "upsample2x"
   type: "Deconvolution"
-  bottom: "roi_pool_conv5"
+  bottom: "roi_pool_conv5_concat"
   top: "roi_pool_conv5_2x"  
   
   convolution_param {
-    num_output: 3
-    group: 3
+    num_output: 512
+    group: 512
     bias_term: false
     pad: 1
     kernel_size: 4
@@ -316,7 +356,6 @@ layer {
     
   }
 }
-
 
 layer {
   name: "fc6_new"

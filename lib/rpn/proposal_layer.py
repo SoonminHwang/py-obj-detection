@@ -26,6 +26,11 @@ class ProposalLayer(caffe.Layer):
         layer_params = yaml.load(self.param_str)
 
         self._feat_stride = layer_params['feat_stride']
+
+        if 'context_scale' in layer_params:
+            self._context_scale = layer_params['context_scale']
+        else:
+            self._context_scale = 1
         
         if cfg.NET.KMEANS_ANCHOR:
 
@@ -179,9 +184,12 @@ class ProposalLayer(caffe.Layer):
         proposals = proposals[keep, :]
         scores = scores[keep]
 
+        # Apply context pooling
+        proposals = _rescale_box(proposals, im_info)
+
         # Output rois blob
         # Our RPN implementation only supports a single input image, so all
-        # batch inds are 0
+        # batch inds are 0        
         batch_inds = np.zeros((proposals.shape[0], 1), dtype=np.float32)
         blob = np.hstack((batch_inds, proposals.astype(np.float32, copy=False)))
         top[0].reshape(*(blob.shape))
@@ -199,6 +207,26 @@ class ProposalLayer(caffe.Layer):
     def reshape(self, bottom, top):
         """Reshaping happens during the call to forward."""
         pass
+
+
+    def _rescale_box(self, boxes, im_shape):
+
+        N = len(boxes)
+
+        ct_x = ( boxes[:, 2] + boxes[:,0] ) / 2
+        ct_y = ( boxes[:, 3] + boxes[:,1] ) / 2
+
+        width_half = ( boxes[:, 2] - boxes[:,0] + 1 ) / 2
+        height_half = ( boxes[:, 3] - boxes[:,1] + 1 ) / 2
+        
+        new_x1 = max( 0, ct_x - width_half * self._context_scale )
+        new_y1 = max( 0, ct_y - height_half * self._context_scale )
+
+        new_x2 = min( im_shape[1]-1, ct_x + width_half * self._context_scale )
+        new_y2 = min( im_shape[0]-1, ct_y + height_half * self._context_scale )
+
+        return np.hstack( (new_x1, new_y1, new_x2, new_y2) )
+
 
 def _filter_boxes(boxes, min_size):
     """Remove all boxes with any side smaller than min_size."""
