@@ -185,7 +185,7 @@ class ProposalLayer(caffe.Layer):
         scores = scores[keep]
 
         # Apply context pooling
-        proposals = _rescale_box(proposals, im_info)
+        proposals = self._rescale_box(proposals, im_info)
 
         # Output rois blob
         # Our RPN implementation only supports a single input image, so all
@@ -219,13 +219,19 @@ class ProposalLayer(caffe.Layer):
         width_half = ( boxes[:, 2] - boxes[:,0] + 1 ) / 2
         height_half = ( boxes[:, 3] - boxes[:,1] + 1 ) / 2
         
-        new_x1 = max( 0, ct_x - width_half * self._context_scale )
-        new_y1 = max( 0, ct_y - height_half * self._context_scale )
+        new_x1 = ct_x - width_half * self._context_scale
+        new_y1 = ct_y - height_half * self._context_scale
 
-        new_x2 = min( im_shape[1]-1, ct_x + width_half * self._context_scale )
-        new_y2 = min( im_shape[0]-1, ct_y + height_half * self._context_scale )
+        new_x2 = ct_x + width_half * self._context_scale
+        new_y2 = ct_y + height_half * self._context_scale
 
-        return np.hstack( (new_x1, new_y1, new_x2, new_y2) )
+        # new_x1 = max( 0, ct_x - width_half * self._context_scale )
+        # new_y1 = max( 0, ct_y - height_half * self._context_scale )
+
+        # new_x2 = min( im_shape[1]-1, ct_x + width_half * self._context_scale )
+        # new_y2 = min( im_shape[0]-1, ct_y + height_half * self._context_scale )
+        
+        return np.vstack( (new_x1, new_y1, new_x2, new_y2) ).transpose()
 
 
 def _filter_boxes(boxes, min_size):

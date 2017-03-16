@@ -51,8 +51,9 @@ class ProposalTargetLayer(caffe.Layer):
         gt_boxes = bottom[1].data
 
         # Apply context pooling
-        im_info = bottom[2].data[0, :]
-        gt_boxes = _rescale_box(gt_boxes, im_info)
+        im_info = bottom[2].data[0, :]        
+        gt_boxes[:,:-1] = self._rescale_box(gt_boxes, im_info)
+
 
         # Include ground-truth boxes in the set of candidate rois
         zeros = np.zeros((gt_boxes.shape[0], 1), dtype=gt_boxes.dtype)
@@ -122,13 +123,20 @@ class ProposalTargetLayer(caffe.Layer):
         width_half = ( boxes[:, 2] - boxes[:,0] + 1 ) / 2
         height_half = ( boxes[:, 3] - boxes[:,1] + 1 ) / 2
         
-        new_x1 = max( 0, ct_x - width_half * self._context_scale )
-        new_y1 = max( 0, ct_y - height_half * self._context_scale )
+        new_x1 = ct_x - width_half * self._context_scale
+        new_y1 = ct_y - height_half * self._context_scale
 
-        new_x2 = min( im_shape[1]-1, ct_x + width_half * self._context_scale )
-        new_y2 = min( im_shape[0]-1, ct_y + height_half * self._context_scale )
+        new_x2 = ct_x + width_half * self._context_scale
+        new_y2 = ct_y + height_half * self._context_scale
 
-        return np.hstack( (new_x1, new_y1, new_x2, new_y2) )
+        # new_x1 = max( 0, ct_x - width_half * self._context_scale )
+        # new_y1 = max( 0, ct_y - height_half * self._context_scale )
+
+        # new_x2 = min( im_shape[1]-1, ct_x + width_half * self._context_scale )
+        # new_y2 = min( im_shape[0]-1, ct_y + height_half * self._context_scale )
+
+        # return np.hstack( (new_x1, new_y1, new_x2, new_y2) )
+        return np.vstack( (new_x1, new_y1, new_x2, new_y2) ).transpose()
 
 
 def _get_bbox_regression_labels(bbox_target_data, num_classes):

@@ -404,7 +404,7 @@ layer {
   python_param {
     module: 'rpn.proposal_target_layer'
     layer: 'ProposalTargetLayer'
-    param_str: "\{'num_classes': 4, 'context_scale': 1.5\}"
+    param_str: "{'num_classes': 4, 'context_scale': 1.5}"
   }
 }
 

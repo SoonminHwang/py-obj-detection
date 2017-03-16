@@ -295,7 +295,7 @@ layer {
   python_param {
     module: 'rpn.proposal_layer'
     layer: 'ProposalLayer'
-    param_str: "\{'feat_stride': 16, 'context_scale': 1.5\}"
+    param_str: "{'feat_stride': 16, 'context_scale': 1.5}"
   }
 }
 
@@ -360,7 +360,7 @@ layer {
 layer {
   name: "fc6_new"
   type: "InnerProduct"
-  bottom: "roi_pool_conv5"
+  bottom: "roi_pool_conv5_2x"
   top: "fc6_new"
   inner_product_param {
     num_output: 4096
