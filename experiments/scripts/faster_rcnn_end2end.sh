@@ -118,8 +118,9 @@ cp "./tools/demo.py" $DST_DIR
 #cp "./tools/eval_${DB_NAME}.py" $DST_DIR
 #cp ./tools/kitti_evaluate_object.py $DST_DIR
 #cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/solver.prototxt "${DST_DIR}/models"
-cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/trainval.prototxt "${DST_DIR}/models"
-cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/test.prototxt "${DST_DIR}/models"
+#cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/trainval.prototxt "${DST_DIR}/models"
+#cp ./models/$PT_DIR/$NET/faster_rcnn_end2end/test.prototxt "${DST_DIR}/models"
+cp ./models/$PT_DIR/$NET.prototxt ${DST_DIR}
 cp ./tools/testAll.py $DST_DIR
 cp "experiments/cfgs/${CONFIG}" $DST_DIR
 
@@ -131,6 +132,7 @@ time ./tools/train_net.py --gpu ${GPU_ID} \
   --cfg "experiments/cfgs/${CONFIG}" \
   --log_dir ${DST_DIR} \
   --rand \
+  --net ${NET}
 #  --set ${EXTRA_ARGS}
 set +x
 #NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`

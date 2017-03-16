@@ -120,7 +120,10 @@ class imdb(object):
                      'flipped' : True,
                      'gamma' : self.roidb[i]['gamma'], 
                      'crop' : self.roidb[i]['crop'],
-                     'jitter' : self.roidb[i]['jitter']}
+                     'jitter' : self.roidb[i]['jitter'],
+                     'focal' : self.roidb[i]['focal'],
+                     'baseline' : self.roidb[i]['baseline']
+                     }
             self.roidb.append(entry)
         self._image_index = self._image_index * 2
 
@@ -136,7 +139,9 @@ class imdb(object):
                      'flipped' : self.roidb[i]['flipped'],
                      'gamma' : True,
                      'crop' : self.roidb[i]['crop'],
-                     'jitter' : self.roidb[i]['jitter']}
+                     'jitter' : self.roidb[i]['jitter'],
+                     'focal' : self.roidb[i]['focal'],
+                     'baseline' : self.roidb[i]['baseline']}
             self.roidb.append(entry)
         self._image_index = self._image_index * 2
 
@@ -174,7 +179,9 @@ class imdb(object):
                      'flipped' : self.roidb[i]['flipped'],
                      'gamma' : self.roidb[i]['gamma'],
                      'crop' : [h_off, h_off+h_crop, w_off, w_off+w_crop, h, w],
-                     'jitter' : self.roidb[i]['jitter']}
+                     'jitter' : self.roidb[i]['jitter'],
+                     'focal' : self.roidb[i]['focal'],
+                     'baseline' : self.roidb[i]['baseline']}
             
             self.roidb.append(entry)
         self._image_index = self._image_index * 2

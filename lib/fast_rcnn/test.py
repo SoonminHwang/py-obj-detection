@@ -50,7 +50,7 @@ def _get_image_blob(im, mean=cfg.PIXEL_MEANS):
                         interpolation=cv2.INTER_LINEAR)
         im_scale_factors.append(im_scale)
         processed_ims.append(im)
-
+    
     # Create a blob to hold the input images
     blob = im_list_to_blob(processed_ims)
 

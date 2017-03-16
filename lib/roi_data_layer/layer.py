@@ -150,7 +150,8 @@ class RoIDataLayer(caffe.Layer):
         """Get blobs and copy them into this layer's top blob vector."""
         blobs = self._get_next_minibatch()
 
-        # print( '[Input layer] gt_boxes: ', blobs['gt_boxes'] )
+        # print( '[Input layer] gt_boxes: ', blobs['gt_boxes'] )        
+        # print( 'input size: %d x %d' % (blobs['image'].shape[2], blobs['image'].shape[3]) )
 
         for blob_name, blob in blobs.iteritems():
             top_ind = self._name_to_top_map[blob_name]
