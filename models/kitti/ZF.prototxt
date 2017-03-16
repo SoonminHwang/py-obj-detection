@@ -54,6 +54,9 @@ layer {
     kernel_size: 7
     pad: 3
     stride: 2
+
+    weight_filler { type: "gaussian" std: 0.1 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -99,6 +102,9 @@ layer {
     kernel_size: 5
     pad: 2
     stride: 2
+
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -144,6 +150,9 @@ layer {
     kernel_size: 3
     pad: 1
     stride: 1
+
+    weight_filler { type: "gaussian" std: 0.02 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -164,6 +173,9 @@ layer {
     kernel_size: 3
     pad: 1
     stride: 1
+
+    weight_filler { type: "gaussian" std: 0.02 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -184,6 +196,9 @@ layer {
     kernel_size: 3
     pad: 1
     stride: 1
+
+    weight_filler { type: "gaussian" std: 0.02 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -228,7 +243,9 @@ layer {
     #num_output: 140   # 2(bg/fg) * 70(anchors)
     num_output: 40   # 2(bg/fg) * 20(anchors)
     kernel_size: 1 pad: 0 stride: 1
-    weight_filler { type: "gaussian" std: 0.01 }
+    
+    # weight_filler { type: "gaussian" std: 0.01 }
+    weight_filler { type: "gaussian" std: 0.02 }
     bias_filler { type: "constant" value: 0 }
   }
 }
@@ -398,6 +415,9 @@ layer {
   param { lr_mult: 2.0 }
   inner_product_param {
     num_output: 4096
+
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -425,6 +445,9 @@ layer {
   param { lr_mult: 2.0 }
   inner_product_param {
     num_output: 4096
+
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -452,14 +475,9 @@ layer {
   param { lr_mult: 2.0 }
   inner_product_param {
     num_output: 4    
-    weight_filler {
-      type: "gaussian"
-      std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
+    
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }    
   }
 }
 layer {
@@ -471,14 +489,9 @@ layer {
   param { lr_mult: 2.0 }
   inner_product_param {
     num_output: 16  # 21 x 4 -> 4 x 4    
-    weight_filler {
-      type: "gaussian"
-      std: 0.001
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
+
+    weight_filler { type: "gaussian" std: 0.001 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 
