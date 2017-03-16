@@ -32,8 +32,10 @@ layer {
   type: 'Input'
   top: 'image'
   top: 'im_info'
-  input_param { shape { dim: 1      dim: 3      dim: 375      dim: 1242 }  }
-  input_param { shape { dim: 1      dim: 3 }  }
+  input_param { 
+    shape { dim: 1      dim: 3      dim: 375      dim: 1242 }
+    shape { dim: 1      dim: 3 }  
+  }
 
   include: { phase: TEST not_stage: "val" }
 }
@@ -271,6 +273,7 @@ layer {
     param_str: "'feat_stride': 16"
   }
   include { phase: TRAIN }
+  include { phase: TEST not_stage: "val" }
 }
 layer {
   name: "rpn_loss_cls"
@@ -286,6 +289,7 @@ layer {
     normalize: true
   }
   include { phase: TRAIN }
+  include { phase: TEST not_stage: "val" }
 }
 layer {
   name: "rpn_loss_bbox"
@@ -299,6 +303,7 @@ layer {
   smooth_l1_loss_param { sigma: 3.0 }
 
   include { phase: TRAIN }
+  include { phase: TEST not_stage: "val" }
 }
 
 #========= RoI Proposal ============
@@ -318,6 +323,7 @@ layer {
   #reshape_param { shape { dim: 0 dim: 140 dim: -1 dim: 0 } }
   reshape_param { shape { dim: 0 dim: 40 dim: -1 dim: 0 } }
 }
+
 layer {
   name: 'proposal'
   type: 'Python'
@@ -331,8 +337,24 @@ layer {
     layer: 'ProposalLayer'
     param_str: "'feat_stride': 16"
   }
+  include { phase: TRAIN }
+  include { phase: TEST stage: "val" }
 }
 
+layer {
+  name: 'proposal'
+  type: 'Python'
+  bottom: 'rpn_cls_prob_reshape'
+  bottom: 'rpn_bbox_pred'
+  bottom: 'im_info'
+  top: 'rois'
+  python_param {
+    module: 'rpn.proposal_layer'
+    layer: 'ProposalLayer'
+    param_str: "'feat_stride': 16"
+  }
+  include { phase: TEST not_stage: "val" }
+}
 #========= Prepare GT for final loss (train) ============
 layer {
   name: 'roi-data'
@@ -350,6 +372,7 @@ layer {
     param_str: "'num_classes': 4"    
   }
   include { phase: TRAIN }
+  include { phase: TEST stage: "val" }
 }
 
 #========= RCNN ============
@@ -474,6 +497,7 @@ layer {
     normalize: true
   }
   include { phase: TRAIN }
+  include { phase: TEST stage: "val" }
 }
 layer {
   name: "loss_bbox"
@@ -486,6 +510,7 @@ layer {
   loss_weight: 1
 
   include { phase: TRAIN }
+  include { phase: TEST stage: "val" }
 }
 
 #========= Detection (val, deploy) ============
@@ -498,5 +523,15 @@ layer {
     ignore_label: -1
     normalize: true
   }
+  include { phase: TEST }
+}
+
+layer {
+  name: "silence_dummy"
+  type: "Silence"
+  bottom: "bbox_pred"
+  bottom: "cls_prob"
+  bottom: "gt_boxes"
+
   include { phase: TEST }
 }

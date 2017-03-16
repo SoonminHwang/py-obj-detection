@@ -66,8 +66,10 @@ class SolverWrapper(object):
         if len(self.solver.test_nets) > 0:
             self.solver.test_nets[0].layers[0].set_roidb(roidb_val)
 
-    def visualize(self, net, filename):        
+    def visualize(self, net):        
         
+        filename = (self.solver_param.snapshot_prefix + '_iter_{:07d}'.format(self.solver.iter) + '.png')
+
         blobs_out = net.forward()
 
         try:
@@ -81,11 +83,13 @@ class SolverWrapper(object):
 
         im_scale = float(cfg.TEST.SCALES[0]) / float(min(im.shape[:2]))
 
+
         if cfg.TEST.HAS_RPN:
             # assert len(im_scale) == 1, "Only single-image batch implemented"
             rois = net.blobs['rois'].data.copy()
             # unscale back to raw image space
-            boxes = rois[:, 1:5] / im_scale
+            # boxes = rois[:, 1:5] / im_scale
+            boxes = rois[:, 1:5]
         elif cfg.DEDUP_BOXES > 0:
             raise NotImplementedError
             # When mapping from image ROIs to feature map ROIs, there's some aliasing
@@ -155,7 +159,7 @@ class SolverWrapper(object):
             n_det += len(inds)
             self.vis_detections(imdb.classes[j], cls_dets, clrs[j])
             
-        plt.title('%d objects are detected.' % n_det)
+        plt.title('%d objects are detected. (image size: %d x %d)' % (n_det, im.shape[0], im.shape[1]))
         plt.gca().legend()
         plt.savefig(filename)
 
@@ -203,7 +207,7 @@ class SolverWrapper(object):
         infix = ('_' + cfg.TRAIN.SNAPSHOT_INFIX
                  if cfg.TRAIN.SNAPSHOT_INFIX != '' else '')
         filename = (self.solver_param.snapshot_prefix + infix +
-                    '_iter_{:d}'.format(self.solver.iter) + '.pkl')
+                    '_iter_{:07d}'.format(self.solver.iter) + '.pkl')
                 
         # caffemodel
         # net.save(str(filename))
@@ -229,6 +233,8 @@ class SolverWrapper(object):
     def train_model(self, max_iters):
         """Network training loop."""
         last_snapshot_iter = -1
+        visualization_iter = int(cfg.TRAIN.SNAPSHOT_ITERS/10)
+
         timer = Timer()
         model_paths = []
         while self.solver.iter < max_iters:
@@ -243,11 +249,13 @@ class SolverWrapper(object):
                 last_snapshot_iter = self.solver.iter
                 filename = self.snapshot()
                 model_paths.append(filename)
+
+            if self.solver.iter % visualization_iter == 0:
                 # Visualize!                
                 if len(self.solver.test_nets) > 0:
-                    self.visualize(self.solver.test_nets[0], filename)
+                    self.visualize(self.solver.test_nets[0])
                 else:
-                    self.visualize(self.solver.net, filename)
+                    self.visualize(self.solver.net)
                 
         if last_snapshot_iter != self.solver.iter:
             model_paths.append(self.snapshot())

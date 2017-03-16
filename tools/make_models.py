@@ -43,12 +43,12 @@ def write_solver(output_dir, base_lr=0.01, momentum=0.9, test_iter=10, test_inte
     sp['iter_size'] = str(iter_size)
     
     solver_file = os.path.join(output_dir, 'models', 'solver.prototxt')
-    with open( solver_file, 'w') as f:
-        f.write('test_state { stage: "val" }\n')
+    with open( solver_file, 'w') as f:        
         for key, value in sorted(sp.items()):
             if not(type(value) is str):
                 raise TypeError('All solver parameters must be strings')
-            f.write('%s: %s\n' % (key, value))
+            f.write('%s: %s\n' % (key, value))        
+        f.write('test_state { stage: "val" }\n')
 
     return solver_file
 

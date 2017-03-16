@@ -57,9 +57,7 @@ def parse_args():
     parser.add_argument('--set', dest='set_cfgs',
                         help='set config keys', default=None,
                         nargs=argparse.REMAINDER)
-    parser.add_argument('--net', dest='net',
-                        help='network name')
-
+    
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -124,8 +122,8 @@ if __name__ == '__main__':
     print 'Output will be saved to `{:s}`'.format(output_dir)
 
     snapshot_prefix = os.path.join(output_dir, cfg.SOLVER.SNAPSHOT_PREFIX)
-    # net = os.path.join(args.log_dir, 'models', 'trainval.prototxt')
-    net = os.path.join(args.log_dir, args.net + '.prototxt')
+    net = os.path.join(args.log_dir, 'models', 'network.prototxt')
+    # net = os.path.join(args.log_dir, 'models', args.net + '.prototxt')
 
     solver_file = write_solver(args.log_dir, base_lr=cfg.SOLVER.BASE_LR, lr_policy=cfg.SOLVER.LR_POLICY, 
         gamma=cfg.SOLVER.GAMMA, stepsize=cfg.SOLVER.STEPSIZE, display=cfg.SOLVER.DISPLAY, 
