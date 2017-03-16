@@ -228,11 +228,44 @@ class kitti(imdb):
         # fileName = im_ann['file_name'].replace('png', 'bin')
         # image_path = osp.join(self._data_path, 'depths', self._data_name, fileName)
         # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'disparity_2', '%06d.bin' % index)
-        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap', '%06d.npy' % index)
+        # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap', '%06d.npy' % index)
+
+        # 16bit uint png image
+        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap_2', '%06d.png' % index)
 
         assert osp.exists(depth_file), \
                 'Path does not exist: {}'.format(depth_file)
         return depth_file
+
+    def calib_path_from_index(self, index):    
+        # To compute metric depth from disparity
+        calib_file = osp.join(self._data_path, self._view_map[self._image_set], 'calib', '%06d.txt' % index)
+        assert osp.exists(calib_file), \
+                'Path does not exist: {}'.format(calib_file)
+        return calib_file
+
+    def _read_calib_file(self, file):
+        float_chars = set("0123456789.e+- ")
+
+        data = {}
+        with open(file, 'r') as f:
+            lines = [line.rstrip('\n') for line in f.readlines()]
+            
+            for line in lines:          
+                try:
+                    key, value = line.split(':')
+                except:
+                    continue
+
+                value = value.strip()
+                data[key] = value
+                if float_chars.issuperset(value):
+                    # try to cast to float array
+                    try:
+                        data[key] = np.array(map(float, value.split(' ')))
+                    except ValueError:
+                        pass  # casting error: data[key] already eq. value, so pass
+        return data
 
     def label_path_at(self, i):
         """
@@ -325,6 +358,11 @@ class kitti(imdb):
         image_file = self.image_path_from_index(index)
         height, width = cv2.imread(image_file).shape[:2]
 
+        calib_file = self.calib_path_from_index(index)
+        cal = self._read_calib_file(calib_file)
+        f = cal['P2'][0]
+        B = 0.54
+
         # Follow 'demo_load_kitti_dataset.py by Soonmin'        
         # hRng, occLevel, tRng = self.config['hRng'], self.config['occLevel'], self.config['truncRng']
 
@@ -402,7 +440,9 @@ class kitti(imdb):
                 'flipped' : False,      # Data augmentation
                 'gamma' : False,        # Data augmentation
                 'crop' : None,          # Data augmentation
-                'jitter' : False
+                'jitter' : False,
+                'focal' : f,
+                'baseline' : B
                 }
 
 

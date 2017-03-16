@@ -14,6 +14,7 @@ from fast_rcnn.config import cfg
 from utils.blob import prep_im_for_blob, im_list_to_blob
 
 from transform.image_transform import _flip, _crop_resize, _gamma_correction
+# from scipy import misc
 
 def get_minibatch(roidb, num_classes):
     """Given a roidb, construct a minibatch sampled from it."""
@@ -155,14 +156,29 @@ def _get_input_blob(roidb, scale_inds):
             input_type = roidb[i]['input'][j].keys()[0]
             input_file = roidb[i]['input'][j].values()[0]
 
-  
-            if input_file.endswith('.png'):
-                input_data = cv2.imread(input_file)
-            else:
-                input_data = np.load(input_file)
-                input_data[input_data == -1] = 0
-                # input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
-                # input_data = np.asarray(input_data)
+
+            # Load 16-bit uint png image  
+            input_data = cv2.imread(input_file, -1)
+            # input_data = misc.imread( input_file )
+            
+            if input_data.dtype == np.uint16:
+                # From kitti/flow2015/devkit/matlab/disp_read.m,
+                input_data = input_data.astype(np.float32) / 256.0        
+
+                if cfg.USE_METRIC_DEPTH:
+                    mask = input_data == 0.0
+                    input_data[ mask ] = -1
+                    input_data = roidb[i]['focal'] * roidb[i]['baseline'] / input_data
+                    input_data[ mask ] = 0.0
+
+            # if input_file.endswith('.png'):
+            #     input_data = cv2.imread(input_file)
+            # else:                
+            #     input_data = np.load(input_file)
+            #     input_data[input_data == -1] = 0
+
+            #     # input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
+            #     # input_data = np.asarray(input_data)
 
             if roidb[i]['flipped']:
                 input_data = _flip(input_data)

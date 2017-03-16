@@ -29,6 +29,7 @@ cfg = __C
 
 
 __C.INPUT = ['image']
+__C.USE_METRIC_DEPTH = True
 
 #
 # Solver
