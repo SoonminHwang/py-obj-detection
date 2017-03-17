@@ -11,7 +11,7 @@ import numpy as np
 import numpy.random as npr
 import cv2
 from fast_rcnn.config import cfg
-from utils.blob import prep_im_for_blob, im_list_to_blob
+from utils.blob import prep_im_for_blob, im_list_to_blob, prep_im_for_blob_randscale
 
 from transform.image_transform import _flip, _crop_resize, _gamma_correction
 # from scipy import misc
@@ -142,7 +142,7 @@ def _get_input_blob(roidb, scale_inds):
     """
     num_images = len(roidb)
     processed_ims = []
-    im_scales = []
+    # im_scales = []
     # blob = {'scales': []}
     blob = {}
     for i in xrange(num_images):
@@ -152,6 +152,9 @@ def _get_input_blob(roidb, scale_inds):
         width = roidb[i]['width']
         height = roidb[i]['height']
         
+        N = len(cfg.TRAIN.USE_AUGMENTATION.IM_SCALES)    
+        im_scale = cfg.TRAIN.USE_AUGMENTATION.IM_SCALES[ npr.choice(N, 1)]
+
         for j in xrange(n_input_types):
             input_type = roidb[i]['input'][j].keys()[0]
             input_file = roidb[i]['input'][j].values()[0]
@@ -187,14 +190,14 @@ def _get_input_blob(roidb, scale_inds):
             if roidb[i]['crop'] is not None:
                 input_data = _crop_resize(input_data, roidb[i]['crop'])
 
-            target_size = cfg.TRAIN.SCALES[scale_inds[i]]
+            # target_size = cfg.TRAIN.SCALES[scale_inds[i]]
+            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 0.0   
 
-            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 0.0
-
-            input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
-                                            cfg.TRAIN.MAX_SIZE)
+            # input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
+                                            # cfg.TRAIN.MAX_SIZE)
+            input_data = prep_im_for_blob_randscale(input_data, mean_pixels, im_scale)
                         
-            im_scales.append(im_scale)
+            # im_scales.append(im_scale)
             # blob.append( { input_type: input_data } )
             # processed_ims.append(input_data)
 
