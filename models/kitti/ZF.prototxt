@@ -290,7 +290,7 @@ layer {
     param_str: "'feat_stride': 16"
   }
   include { phase: TRAIN }
-  include { phase: TEST not_stage: "val" }
+  include { phase: TEST stage: "val" }
 }
 layer {
   name: "rpn_loss_cls"
@@ -306,7 +306,7 @@ layer {
     normalize: true
   }
   include { phase: TRAIN }
-  include { phase: TEST not_stage: "val" }
+  include { phase: TEST stage: "val" }
 }
 layer {
   name: "rpn_loss_bbox"
@@ -320,7 +320,7 @@ layer {
   smooth_l1_loss_param { sigma: 3.0 }
 
   include { phase: TRAIN }
-  include { phase: TEST not_stage: "val" }
+  include { phase: TEST stage: "val" }
 }
 
 #========= RoI Proposal ============
@@ -532,10 +532,7 @@ layer {
   type: "Softmax"
   bottom: "cls_score"
   top: "cls_prob"
-  loss_param {
-    ignore_label: -1
-    normalize: true
-  }
+  
   include { phase: TEST }
 }
 
@@ -543,8 +540,17 @@ layer {
   name: "silence_dummy"
   type: "Silence"
   bottom: "bbox_pred"
-  bottom: "cls_prob"
-  bottom: "gt_boxes"
+  bottom: "cls_prob"  
 
   include { phase: TEST }
+}
+
+
+layer {
+  name: "silence_gt"
+  type: "Silence"
+  
+  bottom: "gt_boxes"
+
+  include { phase: TEST stage: "val"}
 }

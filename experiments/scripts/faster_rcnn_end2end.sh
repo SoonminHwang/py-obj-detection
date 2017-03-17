@@ -126,12 +126,12 @@ cp "experiments/cfgs/${CONFIG}" $DST_DIR
 
 
 time ./tools/train_net.py --gpu ${GPU_ID} \
-  --weights data/imagenet_models/${NET}.v2.caffemodel \
   --imdb_train ${TRAIN_IMDB} \
   --imdb_val ${TEST_IMDB} \
   --cfg "experiments/cfgs/${CONFIG}" \
   --log_dir ${DST_DIR} \
-  --rand  
+  --rand \
+  --weights data/imagenet_models/${NET}.v2.caffemodel
 #  --set ${EXTRA_ARGS}
 set +x
 #NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`

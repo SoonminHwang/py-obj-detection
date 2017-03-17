@@ -50,7 +50,7 @@ def _get_image_blob(im, mean=cfg.PIXEL_MEANS):
                         interpolation=cv2.INTER_LINEAR)
         im_scale_factors.append(im_scale)
         processed_ims.append(im)
-    
+
     # Create a blob to hold the input images
     blob = im_list_to_blob(processed_ims)
 
@@ -168,13 +168,20 @@ def im_detect(net, im, boxes=None):
         # use the raw scores before softmax under the assumption they
         # were trained as linear SVMs
         scores = net.blobs['cls_score'].data
-    else:
+    else:        
         # use softmax estimated probabilities
-        scores = blobs_out['cls_prob']
+        try:
+            scores = blobs_out['cls_prob']
+        except:
+            scores = net.blobs['cls_prob'].data.copy()
 
     if cfg.TEST.BBOX_REG:
         # Apply bounding-box regression deltas
-        box_deltas = blobs_out['bbox_pred']
+        try:
+            box_deltas = blobs_out['bbox_pred']
+        except:
+            box_deltas = net.blobs['bbox_pred'].data.copy()
+
         pred_boxes = bbox_transform_inv(boxes, box_deltas)
         pred_boxes = clip_boxes(pred_boxes, im.shape)
     else:
