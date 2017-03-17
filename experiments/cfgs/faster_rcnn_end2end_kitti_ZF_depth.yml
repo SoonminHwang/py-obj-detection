@@ -1,4 +1,5 @@
-EXP_DIR: rawImdb_PedCyc2x_depth0_velo_scale2x_kmeans20_flip_gamma_stepsize_100k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
+EXP_DIR: RGB_DEPTH2_Multiscale_100k150k
+# EXP_DIR: rawImdb_PedCyc2x_depth0_velo_scale2x_kmeans20_flip_gamma_stepsize_100k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: scale2x_kmeans20_flip_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: scale1x_kmeans70_flip_crop_gamma_stepsize_70k_maxiter_100k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: scale2x_kmeans70_stepsize_100k_maxiter_140k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
@@ -13,15 +14,15 @@ SOLVER:
   AVERAGE_LOSS: 100
   SNAPSHOT_PREFIX: zf
   ITER_SIZE: 2
-  STEPSIZE: 70000
-  MAX_ITER: 100000
+  STEPSIZE: 100000
+  MAX_ITER: 150000
 
   # TEST_ITER: 50
   # TEST_INTERVAL: 100  
-  TEST_ITER: 50
-  TEST_INTERVAL: 0
-  TEST_COMPUTE_LOSS: "false"
-  TEST_INITIALIZATION: "false"
+  TEST_ITER: 500
+  TEST_INTERVAL: 3000
+  TEST_COMPUTE_LOSS: "true"
+  TEST_INITIALIZATION: "true"
 
 NET:
   NUM_CLASSES: 4
@@ -29,7 +30,7 @@ NET:
   KMEANS_ANCHOR: True         # Data-driven anchors
 
 TRAIN:
-  SNAPSHOT_ITERS: 2000
+  SNAPSHOT_ITERS: 5000
   HAS_RPN: True
   IMS_PER_BATCH: 1
   BBOX_NORMALIZE_TARGETS_PRECOMPUTED: True
@@ -42,7 +43,8 @@ TRAIN:
     FLIP: True
     CROP: False
     GAMMA: True
-  
+    IM_SCALES: [0.25, 0.5, 0.75, 1.0, 1.25, 1.5]
+    
   # scale1x
   # SCALES: [375]
   # MAX_SIZE: 1500
