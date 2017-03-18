@@ -75,7 +75,7 @@ def parse_args():
     return args
 
 
-def demo(net, input_names, conf_thres, nms_thres, iter):
+def demo(net, input_names, conf_thres, nms_thres, iter, f=707.0, B=0.54):
     """Detect object classes in an image using pre-computed object proposals."""
     global CLASSES
 
@@ -90,26 +90,43 @@ def demo(net, input_names, conf_thres, nms_thres, iter):
     _t = {'im_detect' : Timer(), 'misc' : Timer()}
 
     if 'depth' in cfg.INPUT:
-        height, width = im.shape[:2]
-	dp = np.load(input_names[1])
-	dp[dp == -1] = 0
-	#        dp = np.memmap(input_names[1], dtype=np.float32, shape=(height, width))
-	#        dp = np.asarray(dp)
-        ims = [im, dp]
+        # Load 16-bit uint png image  
+        input_data = cv2.imread(input_names[1], -1)
+        # input_data = misc.imread( input_file )
+        
+        if input_data.dtype == np.uint16:
+            # From kitti/flow2015/devkit/matlab/disp_read.m,
+            input_data = input_data.astype(np.float32) / 256.0        
 
-	#        fig, axes = plt.add_subplots(2,2)
+            if cfg.USE_METRIC_DEPTH:
+                mask = input_data == 0.0
+                input_data[ mask ] = -1
+                input_data = f * B / input_data
+                input_data[ mask ] = 0.0
 
-	#        axes[0][0].imshow(im)
-	#        axes[0][0].axis('off')
-	#        axes[0][1].imshow(dp)
-	#        axes[0][1].axis('off')
-	#        axes[1][0].imshow(dp)
-	#        axes[1][0].axis('off')
 
-	#        plt.savefig('test_align.png', dpi=200)
+        # height, width = im.shape[:2]
+        # dp = np.load(input_names[1])
+        # dp[dp == -1] = 0
 
-	#        import ipdb
-	#        ipdb.set_trace()
+        #        dp = np.memmap(input_names[1], dtype=np.float32, shape=(height, width))
+        #        dp = np.asarray(dp)
+        
+        ims = [im, input_data]
+
+        #        fig, axes = plt.add_subplots(2,2)
+
+        #        axes[0][0].imshow(im)
+        #        axes[0][0].axis('off')
+        #        axes[0][1].imshow(dp)
+        #        axes[0][1].axis('off')
+        #        axes[1][0].imshow(dp)
+        #        axes[1][0].axis('off')
+
+        #        plt.savefig('test_align.png', dpi=200)
+
+        #        import ipdb
+        #        ipdb.set_trace()
 
 
         _t['im_detect'].tic()
@@ -225,8 +242,12 @@ if __name__ == '__main__':
         for ii in np.random.choice(imdb.num_images, 5):
             im_names = [ imdb.image_path_at(ii) ]
             if 'depth' in cfg.INPUT:
-                im_names.append( imdb.depth_path_at(ii) )            
-            timer = demo(net, im_names, args.conf_thres, args.nms_thres, model_iter)
+                im_names.append( imdb.depth_path_at(ii) )
+
+            f = imdb.roidb[ii]['focal']
+            B = imdb.roidb[ii]['baseline']
+
+            timer = demo(net, im_names, args.conf_thres, args.nms_thres, model_iter, f, B)
             print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s'.format(os.path.basename(im_names[0]), ii + 1, 
                 imdb.num_images, timer['im_detect'].average_time, 
                 timer['misc'].average_time)
