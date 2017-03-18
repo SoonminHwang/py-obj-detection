@@ -262,11 +262,18 @@ def im_detect_depth(net, ims, boxes=None):
         scores = net.blobs['cls_score'].data
     else:
         # use softmax estimated probabilities
-        scores = blobs_out['cls_prob']
+        try:
+            scores = blobs_out['cls_prob']
+        except:
+            scores = net.blobs['cls_prob'].data.copy()
 
     if cfg.TEST.BBOX_REG:
         # Apply bounding-box regression deltas
-        box_deltas = blobs_out['bbox_pred']
+        try:
+            box_deltas = blobs_out['bbox_pred']
+        except:
+            box_deltas = net.blobs['bbox_pred'].data.copy()
+
         pred_boxes = bbox_transform_inv(boxes, box_deltas)
         pred_boxes = clip_boxes(pred_boxes, ims[0].shape)
     else:
@@ -359,9 +366,23 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=No
             im = cv2.imread(imdb.image_path_at(i))
 
             if 'depth' in cfg.INPUT:
-                height, width = im.shape[:2]
-		dp = np.load(imdb.depth_path_at(i))
-		dp[dp == -1] = 0
+                dp = cv2.imread(imdb.depth_path_at(i), -1)
+                # input_data = misc.imread( input_file )
+
+                if dp.dtype == np.uint16:
+                # From kitti/flow2015/devkit/matlab/disp_read.m,
+                    dp = dp.astype(np.float32) / 256.0        
+
+                if cfg.USE_METRIC_DEPTH:
+                    mask = dp == 0.0
+                    dp[ mask ] = -1
+                    dp = imdb.roidb[i]['focal'] * imdb.roidb[i]['baseline'] / dp
+                    dp[ mask ] = 0.0
+
+                # height, width = im.shape[:2]
+                # dp = np.load(imdb.depth_path_at(i))
+                # dp[dp == -1] = 0
+
                 #dp = np.memmap(imdb.depth_path_at(i), dtype=np.float32, shape=(height, width))
                 #dp = np.asarray(dp)
                 ims = [im, dp]
