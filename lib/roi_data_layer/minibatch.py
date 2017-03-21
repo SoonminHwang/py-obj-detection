@@ -159,10 +159,14 @@ def _get_input_blob(roidb, scale_inds):
             if input_file.endswith('.png'):
                 input_data = cv2.imread(input_file)
             else:
-                input_data = np.load(input_file)
+                if input_file.endswith('.npy'):
+                    input_data = np.load(input_file)
+                else:
+                    # .bin, memory map
+                    input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
+                    input_data = np.asarray(input_data)
+                
                 input_data[input_data == -1] = 0
-                # input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
-                # input_data = np.asarray(input_data)
 
             if roidb[i]['flipped']:
                 input_data = _flip(input_data)
