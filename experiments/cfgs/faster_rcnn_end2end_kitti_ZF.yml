@@ -1,4 +1,5 @@
-EXP_DIR: all_in_one_baselr_0.001_PedCyc2x_scale2x_kmeans20_flip_gamma_stepsize_100k_maxiter_150k_person_sitting_van_imdb_hRng20_occ012_trunc0.5
+EXP_DIR: mAP_Test_80k200k
+# EXP_DIR: all_in_one_baselr_0.001_PedCyc2x_scale2x_kmeans20_flip_gamma_stepsize_100k_maxiter_150k_person_sitting_van_imdb_hRng20_occ012_trunc0.5
 # EXP_DIR: newImdb_augment_PedCyc2x_scale4x_kmeans20_flip_gamma_stepsize_50k_maxiter_70k_person_sitting_van_imdb_hRng20_occ012_trunc0.5
 # EXP_DIR: scale1x_kmeans20_flip_crop_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 # EXP_DIR: scale1x_kmeans70_flip_crop_gamma_stepsize_70k_maxiter_100k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
@@ -16,13 +17,13 @@ SOLVER:
   AVERAGE_LOSS: 100
   SNAPSHOT_PREFIX: zf
   ITER_SIZE: 2
-  STEPSIZE: 100000
-  MAX_ITER: 150000
+  STEPSIZE: 80000
+  MAX_ITER: 200000
   
   TEST_ITER: 500
   # TEST_INTERVAL: 100
   # TEST_ITER: 0
-  TEST_INTERVAL: 3000
+  TEST_INTERVAL: 1000
   TEST_COMPUTE_LOSS: "true"
   TEST_INITIALIZATION: "false"
 

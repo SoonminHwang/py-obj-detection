@@ -60,7 +60,9 @@ class RoIDataLayer(caffe.Layer):
         else:
             db_inds = self._get_next_minibatch_inds()
             minibatch_db = [self._roidb[i] for i in db_inds]            
-            return get_minibatch(minibatch_db, self._num_classes)
+
+            isTrain = not self.phase # either '0: TRAIN' or '1: TEST'            
+            return get_minibatch(minibatch_db, self._num_classes, isTrain)
 
     def set_roidb(self, roidb):
         """Set the roidb to be used by this layer during training."""
@@ -149,6 +151,35 @@ class RoIDataLayer(caffe.Layer):
     def forward(self, bottom, top):
         """Get blobs and copy them into this layer's top blob vector."""
         blobs = self._get_next_minibatch()
+
+        # ## DEBUG
+        # if self.phase == 1:
+        #     img = blobs['image'][0].copy()
+        #     img = img.transpose((1,2,0))            
+        #     img += cfg.PIXEL_MEANS    
+        #     img = img[:,:,(2,1,0)]
+        #     img = img.astype(np.uint8)
+
+        #     gt_boxes = blobs['gt_boxes'].copy()
+
+        #     import matplotlib.pyplot as plt
+        #     plt.figure(1)
+        #     plt.clf()
+        #     plt.ion()
+        #     plt.imshow( img )
+        #     axe = plt.gca()
+
+        #     print('Layer.py, gt_boxes ')
+        #     print gt_boxes
+
+        #     for g in gt_boxes:                
+        #         axe.add_patch( plt.Rectangle((g[0], g[1]), g[2]-g[0], g[3]-g[1], fill=False, edgecolor='r', linewidth=2.5) )
+
+        #     plt.axis('off')
+        #     plt.savefig('input.jpg')
+
+        # import ipdb
+        # ipdb.set_trace()
 
         # print( '[Input layer] gt_boxes: ', blobs['gt_boxes'] )        
         # print( 'input size: %d x %d' % (blobs['image'].shape[2], blobs['image'].shape[3]) )

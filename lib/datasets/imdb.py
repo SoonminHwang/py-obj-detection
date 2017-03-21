@@ -122,7 +122,9 @@ class imdb(object):
                      'crop' : self.roidb[i]['crop'],
                      'jitter' : self.roidb[i]['jitter'],
                      'focal' : self.roidb[i]['focal'],
-                     'baseline' : self.roidb[i]['baseline']
+                     'baseline' : self.roidb[i]['baseline'],
+                     'gt_occ': self.roidb[i]['gt_occ'],
+                     'gt_trunc': self.roidb[i]['gt_trunc']
                      }
             self.roidb.append(entry)
         self._image_index = self._image_index * 2
@@ -141,7 +143,10 @@ class imdb(object):
                      'crop' : self.roidb[i]['crop'],
                      'jitter' : self.roidb[i]['jitter'],
                      'focal' : self.roidb[i]['focal'],
-                     'baseline' : self.roidb[i]['baseline']}
+                     'baseline' : self.roidb[i]['baseline'],
+                     'gt_occ': self.roidb[i]['gt_occ'],
+                     'gt_trunc': self.roidb[i]['gt_trunc']
+                     }
             self.roidb.append(entry)
         self._image_index = self._image_index * 2
 
@@ -181,7 +186,10 @@ class imdb(object):
                      'crop' : [h_off, h_off+h_crop, w_off, w_off+w_crop, h, w],
                      'jitter' : self.roidb[i]['jitter'],
                      'focal' : self.roidb[i]['focal'],
-                     'baseline' : self.roidb[i]['baseline']}
+                     'baseline' : self.roidb[i]['baseline'],
+                     'gt_occ': self.roidb[i]['gt_occ'],
+                     'gt_trunc': self.roidb[i]['gt_trunc']
+                     }
             
             self.roidb.append(entry)
         self._image_index = self._image_index * 2

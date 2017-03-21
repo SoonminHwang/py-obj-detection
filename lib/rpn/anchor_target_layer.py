@@ -101,7 +101,8 @@ class AnchorTargetLayer(caffe.Layer):
 
         # map of shape (..., H, W)
         height, width = bottom[0].data.shape[-2:]
-        # GT boxes (x1, y1, x2, y2, label)
+        ## GT boxes (x1, y1, x2, y2, label)
+        # GT boxes (x1, y1, x2, y2, label, occ, trunc)
         gt_boxes = bottom[1].data
         # im_info
         im_info = bottom[2].data[0, :]
@@ -181,7 +182,7 @@ class AnchorTargetLayer(caffe.Layer):
         ### Handle objects that will be ignored in optimization process
         # ignIdx = np.where( gt_boxes[ argmax_overlaps, -1 ] == 4 )        
         # labels[ignIdx] = -1
-        if np.any( gt_boxes[ argmax_overlaps, -1 ] == 4 ):      # __background__, Ped, Cyc, Car        
+        if np.any( gt_boxes[ argmax_overlaps, 4 ] == 4 ):      # __background__, Ped, Cyc, Car        
             import ipdb
             ipdb.set_trace()            
         # labels[ gt_boxes[ argmax_overlaps, -1 ] == 4 ] = -1
@@ -309,6 +310,6 @@ def _compute_targets(ex_rois, gt_rois):
 
     assert ex_rois.shape[0] == gt_rois.shape[0]
     assert ex_rois.shape[1] == 4
-    assert gt_rois.shape[1] == 5
+    # assert gt_rois.shape[1] == 5
 
     return bbox_transform(ex_rois, gt_rois[:, :4]).astype(np.float32, copy=False)

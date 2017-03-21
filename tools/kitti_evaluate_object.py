@@ -333,7 +333,7 @@ class EvalKITTI(object):
 			assigned_ign = False
 			
 			for jj, (d, ign_d, assigned, ignored_thr) in enumerate(zip(dt, ign_dt, assigned_det, ignored_thres)):
-				# detections not of the current class, already assigned or with a low threshold are ignored
+				# detections are not one of the current class, already assigned or with a low threshold are ignored
 				if ign_d == -1 or assigned == True or ignored_thr == True: continue
 				
 				overlap = self._boxoverlap(d.box, g.box)						

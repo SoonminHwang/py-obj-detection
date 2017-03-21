@@ -83,3 +83,14 @@
 
 		- PyQT interface: show & recode points clouds stream
 		- Finish mAP layer
+
+
+### 17.03.20.
+0. Survey: Few-shot learning
+1. [DEBUG] Finish mAP layer
+2. [Ongoing] PyQT Interface
+
+
+### 17.03.21.
+0. Finish mAP layer
+1. PyQT Interface

@@ -16,7 +16,7 @@ from utils.blob import prep_im_for_blob, im_list_to_blob, prep_im_for_blob_rands
 from transform.image_transform import _flip, _crop_resize, _gamma_correction
 # from scipy import misc
 
-def get_minibatch(roidb, num_classes):
+def get_minibatch(roidb, num_classes, randScale):
     """Given a roidb, construct a minibatch sampled from it."""
     num_images = len(roidb)
     # Sample random scales to use for each image in this batch
@@ -32,7 +32,7 @@ def get_minibatch(roidb, num_classes):
     # im_blob, im_scales = _get_image_blob(roidb, random_scale_inds)
     # blobs = {'data': im_blob}
 
-    input_blobs = _get_input_blob(roidb, random_scale_inds)
+    input_blobs = _get_input_blob(roidb, random_scale_inds, randScale)
     im_scales = input_blobs[-1]
 
     # blobs = { item.key(): item.value() for item in input_blobs[0] }
@@ -43,9 +43,15 @@ def get_minibatch(roidb, num_classes):
         assert len(roidb) == 1, "Single batch only"
         # gt boxes: (x1, y1, x2, y2, cls)
         gt_inds = np.where(roidb[0]['gt_classes'] != 0)[0]
-        gt_boxes = np.empty((len(gt_inds), 5), dtype=np.float32)
+        
+        # gt_boxes = np.empty((len(gt_inds), 5), dtype=np.float32)
+        gt_boxes = np.empty((len(gt_inds), 7), dtype=np.float32)        # Add occ, trunc
+
         gt_boxes[:, 0:4] = roidb[0]['boxes'][gt_inds, :] * im_scales[0]
         gt_boxes[:, 4] = roidb[0]['gt_classes'][gt_inds]
+        gt_boxes[:, 5] = roidb[0]['gt_occ'][gt_inds]
+        gt_boxes[:, 6] = roidb[0]['gt_trunc'][gt_inds]
+
         blobs['gt_boxes'] = gt_boxes
         blobs['im_info'] = np.array(
             [[blobs['image'].shape[2], blobs['image'].shape[3], im_scales[0]]],
@@ -136,7 +142,7 @@ def _sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
 
     return labels, overlaps, rois, bbox_targets, bbox_inside_weights
 
-def _get_input_blob(roidb, scale_inds):
+def _get_input_blob(roidb, scale_inds, randScale):
     """Builds an input blob from the images in the roidb at the specified
     scales.
     """
@@ -190,12 +196,16 @@ def _get_input_blob(roidb, scale_inds):
             if roidb[i]['crop'] is not None:
                 input_data = _crop_resize(input_data, roidb[i]['crop'])
 
-            # target_size = cfg.TRAIN.SCALES[scale_inds[i]]
+            target_size = cfg.TRAIN.SCALES[scale_inds[i]]
             mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 0.0   
 
             # input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
                                             # cfg.TRAIN.MAX_SIZE)
-            input_data = prep_im_for_blob_randscale(input_data, mean_pixels, im_scale)
+            if randScale:
+                input_data = prep_im_for_blob_randscale(input_data, mean_pixels, im_scale)
+            else:
+                input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
+                                            cfg.TRAIN.MAX_SIZE)
                         
             # im_scales.append(im_scale)
             # blob.append( { input_type: input_data } )

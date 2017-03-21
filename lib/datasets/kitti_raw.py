@@ -43,7 +43,7 @@ class kitti(imdb):
         imdb.__init__(self, 'kitti_' + year + '_' + image_set)
         # KITTI specific config options
         self.config = {'cleanup' : True,                       
-                       'hRng' : [20, np.inf], # Min. 20 x 50 or 25 x 40
+                       'hRng' : [10, np.inf], # Min. 20 x 50 or 25 x 40
                        'occLevel' : [0, 1, 2],       # 0: fully visible, 1: partly occ, 2: largely occ, 3: unknown
                        'truncRng' : [0, 0.5]     # Only partially-truncated
                       }
@@ -417,6 +417,9 @@ class kitti(imdb):
         gt_classes = np.zeros((num_objs), dtype=np.int32)
         overlaps = np.zeros((num_objs, self.num_classes), dtype=np.float32)
 
+        gt_occ = np.zeros((num_objs), dtype=np.int32)
+        gt_trunc = np.zeros((num_objs), dtype=np.float32)
+
         # Lookup table to map from KITTI category ids to our internal class indices                        
         # kitti_cat_id_to_class_ind = dict([(self._class_to_kitti_cat_id[cls], self._class_to_ind[cls])
                                          # for cls in self._classes[1:]])
@@ -428,6 +431,9 @@ class kitti(imdb):
             boxes[ix, :] = obj['clean_bbox']            
             gt_classes[ix] = cls
             overlaps[ix, cls] = 1.0
+
+            gt_occ[ix] = obj['occ']
+            gt_trunc[ix] = obj['trunc']
                             
         ds_utils.validate_boxes(boxes, width=width, height=height)
         overlaps = scipy.sparse.csr_matrix(overlaps)        
@@ -442,7 +448,9 @@ class kitti(imdb):
                 'crop' : None,          # Data augmentation
                 'jitter' : False,
                 'focal' : f,
-                'baseline' : B
+                'baseline' : B,
+                'gt_occ': gt_occ,
+                'gt_trunc': gt_trunc,
                 }
 
 

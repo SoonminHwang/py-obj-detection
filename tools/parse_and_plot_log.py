@@ -101,7 +101,7 @@ def parse_log(path_to_log):
 
     regex_iteration = re.compile('Iteration (\d+)')
     regex_train_output = re.compile('Train net output #(\d+): (\S+) = ([\.\deE+-]+)')
-    regex_test_output = re.compile('Test net output #(\d+): (\S+) = ([\.\deE+-]+)')
+    regex_test_output = re.compile('Test net output #(\d+): (\S+) = ([\.\deE+-]+)')    
     regex_learning_rate = re.compile('lr = ([-+]?[0-9]*\.?[0-9]+([eE]?[-+]?[0-9]+)?)')
     regex_train_total_loss = re.compile(', loss = ([\.\deE+-]+)')
     regex_test_total_loss = re.compile('Test loss: ([\.\deE+-]+)')
@@ -159,10 +159,13 @@ def parse_log(path_to_log):
             if test_total_loss_match:
                 test_total_loss = float(test_total_loss_match.group(1))
 
+            # import ipdb
+            # ipdb.set_trace()
+
             train_dict_list, train_row = parse_line_for_net_output(
                 regex_train_output, train_row, train_dict_list,
                 line, iteration, seconds, learning_rate, train_total_loss )
-            
+
             test_dict_list, test_row = parse_line_for_net_output(
                 regex_test_output, test_row, test_dict_list,
                 line, iteration, seconds, learning_rate, test_total_loss )
@@ -301,7 +304,9 @@ def drawPlot(ax, dict_list, xLabel, yLabel, avg_step, clr, prop):
 
     ax.plot(xx, yy, clr, alpha=prop['alpha'])
     ax.plot(xx[::avg_step], yy_avg, clr, label=prop['label'])
-    ax.set_yscale('log')
+
+    if 'mAP' not in yLabel:
+        ax.set_yscale('log')
 
 def main():
     args = parse_args()
@@ -312,7 +317,8 @@ def main():
     save_csv_files(args.logfile_path, output_dir, train_dict_list,
                    test_dict_list, delimiter=args.delimiter) 
 
-    loss_term = [ loss for loss in train_dict_list[0].keys() if 'loss' in loss ]
+    loss_term = [ loss for loss in test_dict_list[0].keys() if 'loss' in loss or 'mAP' in loss ]
+    # loss_term = [ loss for loss in train_dict_list[0].keys() if 'loss' in loss ]
 
     cols = int(np.ceil(len(loss_term) / 2.0))
     rows = 2
@@ -323,11 +329,13 @@ def main():
 
     for ii, term in enumerate(loss_term):
         
-        drawPlot(axes[ii], train_dict_list, 'NumIters', term, 20, 'b-', {'alpha':0.3, 'label':'Train'})
+        if term in train_dict_list[0]:
+            drawPlot(axes[ii], train_dict_list, 'NumIters', term, 20, 'b-', {'alpha':0.3, 'label':'Train'})
+
         try:	
-            drawPlot(axes[ii], test_dict_list,  'NumIters', term, 4,  'r-', {'alpha':0.3, 'label':'Test'})
+            drawPlot(axes[ii], test_dict_list,  'NumIters', term, 6,  'r-', {'alpha':0.3, 'label':'Test'})
         except:
-           print('Cannot find test loss')
+            print('Cannot find test loss')
 
         axes[ii].set_title(term)
         axes[ii].set_xlabel('Iteration')

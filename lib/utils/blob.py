@@ -41,11 +41,11 @@ def prep_im_for_blob(im, pixel_means, target_size, max_size):
     im_shape = im.shape
     im_size_min = np.min(im_shape[0:2])
     im_size_max = np.max(im_shape[0:2])
-
-    # scale augmentation
-    N = len(cfg.TRAIN.USE_AUGMENTATION.IM_SCALES)    
-    im_scale = cfg.TRAIN.USE_AUGMENTATION.IM_SCALES[ npr.choice(N, 1)]
     
+    im_scale = float(target_size) / float(im_size_min)    
+    if np.round(im_scale * im_size_max) > max_size:
+        im_scale = float(max_size) / float(im_size_max)
+        
     im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale,
                     interpolation=cv2.INTER_LINEAR)
 
@@ -68,8 +68,6 @@ def prep_im_for_blob_randscale(im, pixel_means, im_scale):
     # im_size_min = np.min(im_shape[0:2])
     # im_size_max = np.max(im_shape[0:2])
 
-    # scale augmentation
-    
     im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale,
                     interpolation=cv2.INTER_LINEAR)
 

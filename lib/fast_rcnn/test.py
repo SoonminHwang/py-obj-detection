@@ -285,7 +285,9 @@ def im_detect_depth(net, ims, boxes=None):
         scores = scores[inv_index, :]
         pred_boxes = pred_boxes[inv_index, :]
 
+    # return scores, pred_boxes, net.blobs['bbox_list'].data.copy()
     return scores, pred_boxes
+
 
 
 def vis_detections(im, class_name, dets, thresh=0.3):
