@@ -93,4 +93,24 @@
 
 ### 17.03.21.
 0. Finish mAP layer
-1. PyQT Interface
+1. [O][Initial] PyQT Interface
+
+### 17.03.22.
+1. [Update] PyQT Interface
+
+		- Upload to github repository
+		- Added feature: load from binary files for fast loading.
+		
+2. [O] Plot performance variation [170222-11-25-58]
+3. Read papers
+
+		- Mask R-CN
+		- Multi-view 3D Object Detection network for Autonomous Driving
+
+4. Prepare a new network
+
+		- Draw 3D bounding boxes
+		- Make quantized 3D point clouds with RGB
+		- Write prototxt
+
+0. Finish mAP layer
