@@ -1,5 +1,3 @@
-#!/home/rcvlab/anaconda2/bin/python
-
 # --------------------------------------------------------
 # Fast R-CNN
 # Copyright (c) 2015 Microsoft

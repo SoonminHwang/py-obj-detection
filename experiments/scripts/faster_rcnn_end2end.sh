@@ -125,7 +125,7 @@ cp ./tools/testAll.py $DST_DIR
 cp "experiments/cfgs/${CONFIG}" $DST_DIR
 
 
-time ./tools/train_net.py --gpu ${GPU_ID} \
+time ipython ./tools/train_net.py -- --gpu ${GPU_ID} \
   --imdb_train ${TRAIN_IMDB} \
   --imdb_val ${TEST_IMDB} \
   --cfg "experiments/cfgs/${CONFIG}" \
@@ -144,10 +144,10 @@ cd $DST_DIR
 ./demo.py --gpu ${GPU_ID} --iter ${ITER_FINAL} --imdb ${TEST_IMDB}
 cd ../../../../
 
-time ./tools/test_net.py --gpu ${GPU_ID} \
-  --def "${DST_DIR}/models/test.prototxt" \
-  --net ${NET_FINAL} \
-  --imdb ${TEST_IMDB} \
-  --cfg "${DST_DIR}/${CONFIG}" \
-  --output_dir "${DST_DIR}/results/${ITER_FINAL}/"
-  ${EXTRA_ARGS}
+# time ./tools/test_net.py --gpu ${GPU_ID} \
+#   --def "${DST_DIR}/models/test.prototxt" \
+#   --net ${NET_FINAL} \
+#   --imdb ${TEST_IMDB} \
+#   --cfg "${DST_DIR}/${CONFIG}" \
+#   --output_dir "${DST_DIR}/results/${ITER_FINAL}/"
+#   ${EXTRA_ARGS}

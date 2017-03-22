@@ -1,11 +1,12 @@
-#!/home/rcvlab/anaconda2/bin/python
-
 # --------------------------------------------------------
 # Fast R-CNN
 # Copyright (c) 2015 Microsoft
 # Licensed under The MIT License [see LICENSE for details]
 # Written by Ross Girshick
 # --------------------------------------------------------
+# run: ipython train_net.py -- --gpu 0 --cfg faster_rcnn_end2end.yml ...
+# --------------------------------------------------------
+
 
 """Train a Fast R-CNN network on a region of interest database."""
 
@@ -57,7 +58,7 @@ def parse_args():
     parser.add_argument('--set', dest='set_cfgs',
                         help='set config keys', default=None,
                         nargs=argparse.REMAINDER)
-    
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -123,7 +124,6 @@ if __name__ == '__main__':
 
     snapshot_prefix = os.path.join(output_dir, cfg.SOLVER.SNAPSHOT_PREFIX)
     net = os.path.join(args.log_dir, 'models', 'network.prototxt')
-    # net = os.path.join(args.log_dir, 'models', args.net + '.prototxt')
 
     solver_file = write_solver(args.log_dir, base_lr=cfg.SOLVER.BASE_LR, lr_policy=cfg.SOLVER.LR_POLICY, 
         gamma=cfg.SOLVER.GAMMA, stepsize=cfg.SOLVER.STEPSIZE, display=cfg.SOLVER.DISPLAY, 

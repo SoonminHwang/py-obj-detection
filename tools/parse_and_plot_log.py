@@ -317,8 +317,10 @@ def main():
     save_csv_files(args.logfile_path, output_dir, train_dict_list,
                    test_dict_list, delimiter=args.delimiter) 
 
-    loss_term = [ loss for loss in test_dict_list[0].keys() if 'loss' in loss or 'mAP' in loss ]
-    # loss_term = [ loss for loss in train_dict_list[0].keys() if 'loss' in loss ]
+    try:
+        loss_term = [ loss for loss in test_dict_list[0].keys() if 'loss' in loss or 'mAP' in loss ]
+    except:
+        loss_term = [ loss for loss in train_dict_list[0].keys() if 'loss' in loss ]
 
     cols = int(np.ceil(len(loss_term) / 2.0))
     rows = 2
