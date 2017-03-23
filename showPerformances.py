@@ -51,6 +51,6 @@ plt.gca().text(len(cyc_moderate)*0.9, cyc_moderate[-1]-10, '{:.2f}'.format(cyc_m
 
 plt.legend(loc='best')
 
-plt.savefig('perf.png', dpi=200)
+plt.savefig('perf_moderate.png', dpi=200)
 
 plt.show()

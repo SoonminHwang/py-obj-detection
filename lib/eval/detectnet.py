@@ -204,6 +204,10 @@ class EvalLayer(caffe.Layer):
         self._num_cur_inputs = self._num_cur_inputs + 1
 
         if self._num_cur_inputs == cfg.SOLVER.TEST_ITER:
+
+            # import ipdb
+            # ipdb.set_trace()
+
         # if True:
 
             # np.save('tmp/gt_%03d.npy' % self._num_cur_inputs, self.gt)
@@ -281,14 +285,54 @@ def match(self, params, gts, dts, im_info):
         if len(gt_cls) != 0 and len(dt_cls) != 0:            
             dt_argmax_overlaps = overlaps.argmax(axis=1)
             dt_max_overlaps = overlaps[np.arange(len(overlaps)), dt_argmax_overlaps]
+
+            gt_argmax_overlaps = overlaps.argmax(axis=0)
+            gt_max_overlaps = overlaps[gt_argmax_overlaps, np.arange(overlaps.shape[1])]     
+
+            try:
+                for matched_gt_ind in list(set(dt_argmax_overlaps)):
+
+                    matched_dt_inds = np.where( matched_gt_ind == dt_argmax_overlaps )
+
+                    # Check validity of matched gt
+                    gt_cond = gt_cls[matched_gt_ind, :]
+                    isValidGT = ( gt_cond[5] - gt_cond[3]) >= params.MIN_HEIGHT[1] \
+                                    and gt_cond[-2] <= params.MAX_OCCLUSION[1] \
+                                    and gt_cond[-1] <= params.MAX_TRUNCATION[1]
+                    if not isValidGT:
+                        gt_max_overlaps[ matched_gt_ind ] = 0.0
+                        dt_max_overlaps[ matched_dt_inds ] = 0.0
+                        dt_cls[ matched_dt_inds, -2 ] = 3
+
+                    
+                    # Multiple matching with valid gt
+                    max_dt_ind = matched_dt_inds[0][ np.argmax( dt_cls[ matched_dt_inds, 7] ) ]
+
+                    for dt_ind in matched_dt_inds[0]:
+                        if dt_ind == max_dt_ind:
+                            continue
+                        else:
+                            dt_max_overlaps[ dt_ind ] = 0.0     # prevent to check as tp
+                            dt_cls[ dt_ind, -2 ] = 3            # set occ flag to 3 (to be ignored)
+            except:
+                print('.')
+                import ipdb
+                ipdb.set_trace()
+
+            
+
+            # ### DEBUG
+            # if np.sum( dt_max_overlaps > params.MIN_OVERLAP[cls_ind-1] ) != np.sum( gt_max_overlaps > params.MIN_OVERLAP[cls_ind-1] ):
+            #     print('+')
+            #     import ipdb
+            #     ipdb.set_trace()
                     
             dt_tp_flag[ dt_max_overlaps > params.MIN_OVERLAP[cls_ind-1] ] = 1
             dt_cls[:, 1] = dt_tp_flag
             dt_cls[:, 8:] = gt_cls[ dt_argmax_overlaps, 8: ]
             
 
-            gt_argmax_overlaps = overlaps.argmax(axis=0)
-            gt_max_overlaps = overlaps[gt_argmax_overlaps, np.arange(overlaps.shape[1])]            
+                   
             gt_tp_flag[ gt_max_overlaps > params.MIN_OVERLAP[cls_ind-1] ] = 1
             gt_cls[:, 1] = gt_tp_flag
             
@@ -360,68 +404,81 @@ def eval(self, gts, dts, image=None, im_info=None):
     #     plt.axis('off')
     #     plt.savefig('EvalLayer_input.jpg', dpi=200)
 
-    mAP = []
-    
-    for gt_cls, dt_cls in zip(gts, dts):
-        # sorting by scores
-        order = np.argsort(dt_cls[:,-3])
-        dt_cls = dt_cls[order[::-1], : ]
+    try:
+
+        mAP = []
         
-        h_gt = gt_cls[:,5] - gt_cls[:,3] + 1
-        h_dt = dt_cls[:,6] - dt_cls[:,4] + 1
+        for gt_cls, dt_cls in zip(gts, dts):
+            # sorting by scores
+            order = np.argsort(dt_cls[:,-3])
+            dt_cls = dt_cls[order[::-1], : ]
+            
+            h_gt = gt_cls[:,5] - gt_cls[:,3] + 1
+            h_dt = dt_cls[:,6] - dt_cls[:,4] + 1
 
-        dt_occ = dt_cls[:,-2]
-        dt_trunc = dt_cls[:,-1]
+            dt_occ = dt_cls[:,-2]
+            dt_trunc = dt_cls[:,-1]
 
-        P = len(gt_cls)
-        D = len(dt_cls)
+            gt_occ = gt_cls[:,-2]
+            gt_trunc = gt_cls[:,-1]
 
-        if P == 0:
-            print( 'No GT instance. Increase TEST_ITER value.')
-            import ipdb
-            ipdb.set_trace()
+            d = 1    # Moderate
+            gt_cond = ( h_gt >= self.p.MIN_HEIGHT[d] ) & ( gt_occ <= self.p.MAX_OCCLUSION[d] ) & ( gt_trunc <= self.p.MAX_TRUNCATION[d] )
+            # P = len(gt_cls)
+            P = np.sum(gt_cond)
+            D = len(dt_cls)
 
-        if D == 0:
-            mAP.append(0.0)
-            continue
-        
-        # 2. Evaluation for each difficulties
-        # for diff_name, diff_ind in params.DIFFICULTY.items():
-        d = 1    # Moderate
-                
-        cond = ( h_dt >= self.p.MIN_HEIGHT[d] ) & ( dt_occ <= self.p.MAX_OCCLUSION[d] ) & ( dt_trunc <= self.p.MAX_TRUNCATION[d] )
-        dt_cls_diff = dt_cls[ cond, : ]
+            if P == 0:
+                print( 'No GT instance. Increase TEST_ITER value.')
+                import ipdb
+                ipdb.set_trace()
 
-        # dt_cls_diff = dt_cls[ h_dt >= params.MIN_HEIGHT[diff_ind], : ]
-        dt_tp_scores = dt_cls_diff[ dt_cls_diff[:,1] == 1, -3 ]
-        scores = dt_cls_diff[:,-3]
-
-        # compute thresholds for each recall        
-        cur_recall = 0.0
-        thresholds = np.zeros( (self.p.N_SAMPLE_PTS - 1.0), dtype=np.float32 )
-        tt = 0
-
-        for ii, score in enumerate(dt_tp_scores):
-            l_recall = (ii+1) / float(P)
-            r_recall = (ii+2) / float(P) if ii < len(dt_tp_scores)-1 else l_recall
-
-            if (r_recall - cur_recall) < (cur_recall - l_recall) and ii < len(dt_tp_scores)-1:
+            if D == 0:
+                mAP.append(0.0)
                 continue
-
-            # left recall is the best approximation, so use this and goto next recall step for approximation
-            recall = l_recall
-
-            thresholds[tt] = score
-            tt += 1
-            cur_recall += 1.0 / (self.p.N_SAMPLE_PTS - 1.0)
-
-        # compute precision/recall for each threshold
-        prec = np.zeros( len(thresholds), np.float32 )
-        for ii, thr in enumerate(thresholds):
-            dt_thres = dt_cls_diff[ scores >= thr, :]
-            prec[ii] = np.sum( dt_thres[:,1] ) / len( dt_thres )
+            
+            # 2. Evaluation for each difficulties
+            # for diff_name, diff_ind in params.DIFFICULTY.items():
+            d = 1    # Moderate
                     
-        mAP.append( np.mean(prec) * 100 )
+            cond = ( h_dt >= self.p.MIN_HEIGHT[d] ) & ( dt_occ <= self.p.MAX_OCCLUSION[d] ) & ( dt_trunc <= self.p.MAX_TRUNCATION[d] )
+            dt_cls_diff = dt_cls[ cond, : ]
+
+            # dt_cls_diff = dt_cls[ h_dt >= params.MIN_HEIGHT[diff_ind], : ]
+            dt_tp_scores = dt_cls_diff[ dt_cls_diff[:,1] == 1, -3 ]
+            scores = dt_cls_diff[:,-3]
+
+            # compute thresholds for each recall        
+            cur_recall = 0.0
+
+            thresholds = np.zeros( (self.p.N_SAMPLE_PTS - 1), dtype=np.float32 )
+            tt = 0
+
+            for ii, score in enumerate(dt_tp_scores):
+                l_recall = (ii+1) / float(P)
+                r_recall = (ii+2) / float(P) if ii < len(dt_tp_scores)-1 else l_recall
+
+                if (r_recall - cur_recall) < (cur_recall - l_recall) and ii <= len(dt_tp_scores)-1:
+                    continue
+
+                # left recall is the best approximation, so use this and goto next recall step for approximation
+                recall = l_recall
+
+                thresholds[tt] = score
+                tt += 1
+                cur_recall += 1.0 / (self.p.N_SAMPLE_PTS - 1.0)
+
+            # compute precision/recall for each threshold
+            prec = np.zeros( len(thresholds), np.float32 )
+            for ii, thr in enumerate(thresholds):
+                dt_thres = dt_cls_diff[ scores >= thr, :]
+                prec[ii] = np.sum( dt_thres[:,1] ) / len( dt_thres )
+                        
+            mAP.append( np.mean(prec) * 100 )
+    except:
+        print('[Error] Func. eval in detectnet.py')        
+        import ipdb
+        ipdb.set_trace()
 
     return mAP
 

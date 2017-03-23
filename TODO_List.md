@@ -104,8 +104,8 @@
 2. [O] Plot performance variation [170222-11-25-58]
 3. Read papers
 
-		- Mask R-CN
-		- Multi-view 3D Object Detection network for Autonomous Driving
+		- Mask R-CNN
+		- [O] Multi-view 3D Object Detection network for Autonomous Driving
 
 4. Prepare a new network
 
@@ -113,4 +113,23 @@
 		- Make quantized 3D point clouds with RGB
 		- Write prototxt
 
-0. Finish mAP layer
+0. [O][Initial] Finish mAP layer
+
+
+### 17.03.23.
+0. Debug: depth input
+1. Depth extension -> XYD input (metric?)
+2. Test: bigger image (train 2x, test 3x)
+3. Research design
+
+		- Velodyne point refinement
+		- Depth hallucination
+		- all around rgb-d detection
+
+4. Try another backbone
+ 
+		- ResNetXt
+
+5. Another depth estimation algorithm
+
+		- dispnet (stereo)
