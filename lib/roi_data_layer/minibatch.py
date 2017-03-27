@@ -180,6 +180,15 @@ def _get_input_blob(roidb, scale_inds, randScale):
                     input_data = roidb[i]['focal'] * roidb[i]['baseline'] / input_data
                     input_data[ mask ] = 0.0
 
+                    [yy, xx] = np.meshgrid(np.arange(width), np.arange(height))
+                    yy = yy.astype(np.float32) / height - 0.5
+                    xx = xx.astype(np.float32) / width - 0.5
+
+                    max_depth = 100.0
+                    input_data = input_data / max_depth - 0.5 
+                    input_data = np.stack( (input_data, xx, yy), axis=2 )
+
+
             # if input_file.endswith('.png'):
             #     input_data = cv2.imread(input_file)
             # else:                
@@ -197,7 +206,7 @@ def _get_input_blob(roidb, scale_inds, randScale):
                 input_data = _crop_resize(input_data, roidb[i]['crop'])
 
             target_size = cfg.TRAIN.SCALES[scale_inds[i]]
-            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 0.0   
+            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else np.array( [[[0.0, 0.0, 0.0]]] )
 
             # input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
                                             # cfg.TRAIN.MAX_SIZE)

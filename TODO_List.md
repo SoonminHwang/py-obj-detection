@@ -119,7 +119,7 @@
 ### 17.03.23.
 0. Debug: depth input
 1. Depth extension -> XYD input (metric?)
-2. Test: bigger image (train 2x, test 3x)
+2. [O][Not helpful] Test: bigger image (train 2x, test 3x)
 3. Research design
 
 		- Velodyne point refinement
@@ -133,3 +133,5 @@
 5. Another depth estimation algorithm
 
 		- dispnet (stereo)
+		- linear interpolation (poor than least square)
+		- mc-cnn (100)

@@ -458,8 +458,8 @@ layer {
   #top: 'rpn_scores'
   python_param {
     module: 'rpn.proposal_layer'
-    layer: 'ProposalLayer'
-    param_str: "'feat_stride': 8"
+    layer: 'ProposalLayer'    
+    param_str: "'feat_stride': 8"     # Conv4
     #param_str: "'feat_stride': 16"
   }
   include { phase: TRAIN }
@@ -475,8 +475,8 @@ layer {
   top: 'rois'
   python_param {
     module: 'rpn.proposal_layer'
-    layer: 'ProposalLayer'
-    param_str: "'feat_stride': 8"
+    layer: 'ProposalLayer'    
+    param_str: "'feat_stride': 8"     # Conv4
     #param_str: "'feat_stride': 16"
   }
   include { phase: TEST not_stage: "val" }
@@ -506,15 +506,37 @@ layer {
 #========= RCNN ============
 
 layer {
+  name: "upsample2x"
+  type: "Deconvolution"
+  bottom: "conv4_3"
+  top: "conv4_3_2x"
+
+  param { lr_mult: 0.0 }
+  convolution_param {
+    num_output: 512
+    group: 512
+    bias_term: false
+    pad: 1
+    kernel_size: 4
+    stride: 2
+    weight_filler {
+      type: "bilinear"
+    }    
+  }
+}
+
+layer {
   name: "roi_pool4"
   type: "ROIPooling"
-  bottom: "conv4_3"
+  #bottom: "conv4_3"
+  bottom: "conv4_3_2x"
   bottom: "rois"
   top: "pool4"
   roi_pooling_param {
     pooled_w: 7
     pooled_h: 7
-    spatial_scale: 0.125 # 1/8
+    spatial_scale: 0.25 # 1/4
+    #spatial_scale: 0.125 # 1/8
     #spatial_scale: 0.0625 # 1/16
   }
 }
