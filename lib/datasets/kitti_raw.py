@@ -205,7 +205,47 @@ class kitti(imdb):
         """
         Construct an image path from the image's "index" identifier.
         """
-        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_2', '%06d.png' % index)
+        # image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_2', '%06d.png' % index)
+        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'flatten_image_2', '%06d.png' % index)
+        # im_ann = self._KITTI.loadImgs(index)[0]
+        # fName = self._image_index[index]
+        # image_path = osp.join(self._data_path, 'images', self._data_name, im_ann['file_name'])
+        
+        assert osp.exists(image_file), \
+                'Path does not exist: {}'.format(image_file)
+        return image_file
+
+    def edge_path_at(self, i):
+        """
+        Return the absolute path to image i in the image sequence.
+        """
+        return self.image_path_from_index(self._image_index[i])
+
+    def edge_path_from_index(self, index):
+        """
+        Construct an image path from the image's "index" identifier.
+        """
+        # image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_2', '%06d.png' % index)
+        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'flatten_edge_2', '%06d.png' % index)
+        # im_ann = self._KITTI.loadImgs(index)[0]
+        # fName = self._image_index[index]
+        # image_path = osp.join(self._data_path, 'images', self._data_name, im_ann['file_name'])
+        
+        assert osp.exists(image_file), \
+                'Path does not exist: {}'.format(image_file)
+        return image_file
+
+    def right_image_path_at(self, i):
+        """
+        Return the absolute path to image i in the image sequence.
+        """
+        return self.image_path_from_index(self._image_index[i])
+
+    def right_image_path_from_index(self, index):
+        """
+        Construct an image path from the image's "index" identifier.
+        """
+        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_3', '%06d.png' % index)
         # im_ann = self._KITTI.loadImgs(index)[0]
         # fName = self._image_index[index]
         # image_path = osp.join(self._data_path, 'images', self._data_name, im_ann['file_name'])
@@ -231,7 +271,11 @@ class kitti(imdb):
         # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap', '%06d.npy' % index)
 
         # 16bit uint png image
-        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap_2', '%06d.png' % index)
+        # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap_2', '%06d.png' % index)
+
+        # float32, binary file
+        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'DispNetCorr1D-K_2', '%07d.float3' % index)
+
 
         assert osp.exists(depth_file), \
                 'Path does not exist: {}'.format(depth_file)

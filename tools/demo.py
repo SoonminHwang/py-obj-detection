@@ -75,7 +75,7 @@ def parse_args():
     return args
 
 
-def demo(net, input_names, conf_thres, nms_thres, iter, f=707.0, B=0.54):
+def demo(net, input_names, conf_thres, nms_thres, iter, f=707.0, B=0.54, prefix=''):
     """Detect object classes in an image using pre-computed object proposals."""
     global CLASSES
 
@@ -179,7 +179,7 @@ def demo(net, input_names, conf_thres, nms_thres, iter, f=707.0, B=0.54):
 
     # save_name = os.path.basename(input_names[0])    
     # plt.savefig('[DEMO_iter_%d]' % iter + save_name, dpi=200)  
-    plt.savefig('[DEMO_iter_%d]' % iter + fname, dpi=200)  
+    plt.savefig(prefix + '[DEMO_iter_%d]' % iter + fname, dpi=200)  
 
     return _t
        
@@ -251,6 +251,19 @@ if __name__ == '__main__':
             print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s'.format(os.path.basename(im_names[0]), ii + 1, 
                 imdb.num_images, timer['im_detect'].average_time, 
                 timer['misc'].average_time)
+
+            # # Right-image
+            # im_names = [ imdb.right_image_path_at(ii) ]
+            # if 'depth' in cfg.INPUT:
+            #     im_names.append( imdb.depth_path_at(ii) )
+
+            # f = imdb.roidb[ii]['focal']
+            # B = imdb.roidb[ii]['baseline']
+
+            # timer = demo(net, im_names, args.conf_thres, args.nms_thres, model_iter, f, B, '[Right]')
+            # print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s'.format(os.path.basename(im_names[0]), ii + 1, 
+            #     imdb.num_images, timer['im_detect'].average_time, 
+            #     timer['misc'].average_time)
 
     else:
         # demo from images

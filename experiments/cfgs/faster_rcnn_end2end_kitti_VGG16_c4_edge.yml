@@ -1,8 +1,8 @@
-EXP_DIR: depth_conv4_pool2x_scale2x_PedCyc2x_200k300k_person_sitting_van_truck_imdb_hRng10_occ012_trunc0.5
+EXP_DIR: edge_conv4_scale2x_PedCyc2x_200k300k_person_sitting_van_truck_imdb_hRng10_occ012_trunc0.5
 #EXP_DIR: scale2x_kmeans70_flip_crop_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: faster_rcnn_end2end
 
-INPUT: ['image', 'depth']
+INPUT: ['image', 'edge']
 
 SOLVER:
   BASE_LR: 0.001
@@ -13,16 +13,16 @@ SOLVER:
   STEPSIZE: 200000
   MAX_ITER: 300000
   
-  # TEST_ITER: 50
-  # TEST_INTERVAL: 100
-  # TEST_COMPUTE_LOSS: "true"
-  # TEST_INITIALIZATION: "true"
-
-  # # Without test phase, to save memory for large image inputs
   TEST_ITER: 50
   TEST_INTERVAL: 0
   TEST_COMPUTE_LOSS: "false"
   TEST_INITIALIZATION: "false"
+
+  # # Without test phase, to save memory for large image inputs
+  # TEST_ITER: 0
+  # TEST_INTERVAL: 0
+  # TEST_COMPUTE_LOSS: "false"
+  # TEST_INITIALIZATION: "false"
 
 NET:
   NUM_CLASSES: 4
@@ -53,6 +53,14 @@ TRAIN:
   SCALES: [755]
   MAX_SIZE: 2500
 
+  # # scale3x
+  # SCALES: [1125]
+  # MAX_SIZE: 4000
+
+  # scale4x
+  # SCALES: [1510]
+  # MAX_SIZE: 5000
+
 TEST:
   HAS_RPN: True
 
@@ -63,3 +71,11 @@ TEST:
   # scale2x
   SCALES: [755]
   MAX_SIZE: 2500
+
+  # # scale3x
+  # SCALES: [1125]
+  # MAX_SIZE: 4000
+
+  # scale4x
+  # SCALES: [1510]
+  # MAX_SIZE: 5000

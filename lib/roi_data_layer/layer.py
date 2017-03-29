@@ -101,7 +101,7 @@ class RoIDataLayer(caffe.Layer):
 
         # Add depth modality
         if 'depth' in cfg.INPUT:
-            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
+            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
                 max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
             self._name_to_top_map['depth'] = idx
             idx += 1
@@ -182,8 +182,8 @@ class RoIDataLayer(caffe.Layer):
         # ipdb.set_trace()
 
         # print( '[Input layer] gt_boxes: ', blobs['gt_boxes'] )        
-        # print( 'input size: %d x %d' % (blobs['image'].shape[2], blobs['image'].shape[3]) )
-        # print( 'input size: %d x %d' % (blobs['depth'].shape[2], blobs['depth'].shape[3]) )
+        # print( '[Image] input size: %d x %d' % (blobs['image'].shape[2], blobs['image'].shape[3]) )
+        # print( '[Depth] input size: %d x %d' % (blobs['depth'].shape[2], blobs['depth'].shape[3]) )
 
         for blob_name, blob in blobs.iteritems():
             top_ind = self._name_to_top_map[blob_name]

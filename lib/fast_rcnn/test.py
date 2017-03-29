@@ -368,18 +368,39 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=No
             im = cv2.imread(imdb.image_path_at(i))
 
             if 'depth' in cfg.INPUT:
-                dp = cv2.imread(imdb.depth_path_at(i), -1)
-                # input_data = misc.imread( input_file )
+                
+                try:
+                    dp = cv2.imread(imdb.depth_path_at(i), -1)
+                    # input_data = misc.imread( input_file )
 
-                if dp.dtype == np.uint16:
-                # From kitti/flow2015/devkit/matlab/disp_read.m,
-                    dp = dp.astype(np.float32) / 256.0        
+                    if dp.dtype == np.uint16:
+                    # From kitti/flow2015/devkit/matlab/disp_read.m,
+                        dp = dp.astype(np.float32) / 256.0        
 
-                if cfg.USE_METRIC_DEPTH:
-                    mask = dp == 0.0
-                    dp[ mask ] = -1
-                    dp = imdb.roidb[i]['focal'] * imdb.roidb[i]['baseline'] / dp
-                    dp[ mask ] = 0.0
+                    if cfg.USE_METRIC_DEPTH:
+                        mask = dp == 0.0
+                        dp[ mask ] = -1
+                        dp = imdb.roidb[i]['focal'] * imdb.roidb[i]['baseline'] / dp
+                        dp[ mask ] = 0.0
+                except:
+                    ## DispFlowNet
+                    with open(imdb.depth_path_at(i), 'rb') as fp:
+                        assert( fp.readline() == 'float\n' )
+                        assert( int(fp.readline()) == 3 )
+                        w = int(fp.readline())
+                        h = int(fp.readline())
+                        c = int(fp.readline())
+
+                        import array
+                        disp = array.array('f')
+                        disp.fromfile(fp, h*w*c)
+
+                    if c != 1:
+                        disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w, c)
+                    else:
+                        disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w)
+
+                    dp = imdb.roidb[i]['focal'] * imdb.roidb[i]['baseline'] / disp
 
                 # height, width = im.shape[:2]
                 # dp = np.load(imdb.depth_path_at(i))
