@@ -219,7 +219,7 @@ class kitti(imdb):
         """
         Return the absolute path to image i in the image sequence.
         """
-        return self.image_path_from_index(self._image_index[i])
+        return self.edge_path_from_index(self._image_index[i])
 
     def edge_path_from_index(self, index):
         """

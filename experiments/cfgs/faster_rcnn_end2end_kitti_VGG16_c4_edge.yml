@@ -7,6 +7,7 @@ INPUT: ['image', 'edge']
 SOLVER:
   BASE_LR: 0.001
   DISPLAY: 20
+  # DISPLAY: 1
   AVERAGE_LOSS: 100
   SNAPSHOT_PREFIX: vgg16
   ITER_SIZE: 2

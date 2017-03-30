@@ -199,7 +199,8 @@ def _get_input_blob(roidb, scale_inds, randScale):
                     # input_data = np.stack( (input_data, xx, yy), axis=2 )
             elif input_type == 'edge':
                 input_data = cv2.imread(input_file, -1)
-                input_data = input_data.astype(np.float32) / 255.0 - 0.5
+                #input_data = input_data.astype(np.float32) / 255.0 - 0.5
+                input_data = input_data.astype(np.float32) - 128.0
 
             else:
                 raise NotImplementedError
@@ -238,7 +239,7 @@ def _get_input_blob(roidb, scale_inds, randScale):
 
             if roidb[i]['flipped']:
                 input_data = _flip(input_data)
-            if roidb[i]['gamma'] and input_type != 'depth':
+            if roidb[i]['gamma'] and input_type != 'depth' and input_type != 'edge':
                 input_data = _gamma_correction(input_data)
             if roidb[i]['crop'] is not None:
                 input_data = _crop_resize(input_data, roidb[i]['crop'])

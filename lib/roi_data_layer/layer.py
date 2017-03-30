@@ -99,6 +99,12 @@ class RoIDataLayer(caffe.Layer):
         self._name_to_top_map['image'] = idx
         idx += 1
 
+        if 'edge' in cfg.INPUT:
+            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
+                max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+            self._name_to_top_map['edge'] = idx
+            idx += 1
+
         # Add depth modality
         if 'depth' in cfg.INPUT:
             top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
@@ -185,6 +191,7 @@ class RoIDataLayer(caffe.Layer):
         # print( '[Image] input size: %d x %d' % (blobs['image'].shape[2], blobs['image'].shape[3]) )
         # print( '[Depth] input size: %d x %d' % (blobs['depth'].shape[2], blobs['depth'].shape[3]) )
 
+        
         for blob_name, blob in blobs.iteritems():
             top_ind = self._name_to_top_map[blob_name]
             # Reshape net's input blobs

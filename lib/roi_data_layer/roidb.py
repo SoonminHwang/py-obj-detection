@@ -32,9 +32,9 @@ def prepare_roidb(imdb):
             "Invalid number of input func. Check datasets/kitti.py"
 
         roidb[i]['input'] = []
-        for n in range( len(imdb.input_path_at) ):
-            input_type = imdb.input_types[n]
-            input_file = imdb.input_path_at[n](i)
+        for _n in range( len(imdb.input_path_at) ):
+            input_type = imdb.input_types[_n]
+            input_file = imdb.input_path_at[_n](i)
             roidb[i]['input'].append( {input_type: input_file} )
             
         # roidb[i]['width'] = sizes[i][0]

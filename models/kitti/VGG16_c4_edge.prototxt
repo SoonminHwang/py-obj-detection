@@ -51,7 +51,7 @@ layer {
   type: "Concat"
   bottom: "image"
   bottom: "edge"  
-  top: "input"
+  top: "input"  
 }
 
 layer {
@@ -65,7 +65,7 @@ layer {
     num_output: 64
     pad: 1
     kernel_size: 3
-    weight_filler {      type: "msra"    }
+    weight_filler {      type: "gaussian" std: 0.1 }
     bias_filler {      type: "constant"  }
     engine: CUDNN
   }
@@ -76,7 +76,7 @@ layer {
   bottom: "conv1_1_4c"
   top: "conv1_1_4c"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -101,7 +101,7 @@ layer {
   bottom: "conv1_2"
   top: "conv1_2"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -138,7 +138,7 @@ layer {
   bottom: "conv2_1"
   top: "conv2_1"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -163,7 +163,7 @@ layer {
   bottom: "conv2_2"
   top: "conv2_2"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -199,7 +199,7 @@ layer {
   bottom: "conv3_1"
   top: "conv3_1"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -224,7 +224,7 @@ layer {
   bottom: "conv3_2"
   top: "conv3_2"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -249,7 +249,7 @@ layer {
   bottom: "conv3_3"
   top: "conv3_3"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -285,7 +285,7 @@ layer {
   bottom: "conv4_1"
   top: "conv4_1"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -310,7 +310,7 @@ layer {
   bottom: "conv4_2"
   top: "conv4_2"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -335,7 +335,7 @@ layer {
   bottom: "conv4_3"
   top: "conv4_3"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 
@@ -362,7 +362,7 @@ layer {
   bottom: "rpn/output"
   top: "rpn/output"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 
@@ -569,7 +569,7 @@ layer {
   bottom: "fc6"
   top: "fc6"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
@@ -602,7 +602,7 @@ layer {
   bottom: "fc7"
   top: "fc7"
   relu_param {
-    negative_slope: 0.1
+    negative_slope: 0.0
   }
 }
 layer {
