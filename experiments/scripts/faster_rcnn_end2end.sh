@@ -93,7 +93,8 @@ case $DATASET in
     # You can probably use fewer iterations and reduce the
     # time to the LR drop (set in the solver to 350,000 iterations).
     TRAIN_IMDB="coco_2014_train"
-    TEST_IMDB="coco_2014_minival"
+    #TEST_IMDB="coco_2014_minival"
+    TEST_IMDB="coco_2014_val"
     PT_DIR="coco"
     CONFIG="faster_rcnn_end2end.yml"
     #ITERS=490000

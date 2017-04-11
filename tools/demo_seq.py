@@ -27,7 +27,7 @@ lib_path = osp.join(osp.dirname(__file__), '..', 'lib')
 if lib_path not in sys.path: sys.path.insert(0, lib_path)
 
 from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
-from fast_rcnn.test import im_detect, im_detect_depth
+from fast_rcnn.test import im_detect, im_detect_depth, im_detect_edge
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 import matplotlib.pyplot as plt
@@ -70,21 +70,31 @@ def parse_args():
     return args
 
 
-def demo(net, input_name, gts, conf_thres, nms_thres, iter):
+def demo(net, input_names, gts, conf_thres, nms_thres, iter, prefix=''):
     """Detect object classes in an image using pre-computed object proposals."""
     global CLASSES
 
     # Load the demo image    
-    im = cv2.imread(input_name)
-    fname = os.path.basename(input_name)
+    im = cv2.imread(input_names[0])
+    fname = os.path.basename(input_names[0])
 
     # Detect all object classes and regress object bounds
     # timers
     _t = {'im_detect' : Timer(), 'misc' : Timer()}
 
-    _t['im_detect'].tic()
-    scores, boxes = im_detect(net, im)
-    _t['im_detect'].toc()
+    if 'edge' in cfg.INPUT:
+        input_data = cv2.imread(input_names[1], -1)        
+        input_data = input_data.astype(np.float32) - 128.0
+
+        ims = [im, input_data]        
+
+        _t['im_detect'].tic()
+        scores, boxes = im_detect_edge(net, ims)
+        _t['im_detect'].toc()
+    else:
+        _t['im_detect'].tic()
+        scores, boxes = im_detect(net, im)
+        _t['im_detect'].toc()
     
 
     _t['misc'].tic()    
@@ -143,8 +153,9 @@ def demo(net, input_name, gts, conf_thres, nms_thres, iter):
     
     plt.tight_layout()
 
-    saveDir = os.path.dirname(input_name).replace('image_02', 'results_02')
-    saveDir = os.path.join( saveDir, 'iter_%06d' % iter )
+    prefix = prefix + '_' if prefix is not '' else ''
+    saveDir = os.path.dirname(input_names[0]).replace('image_02', 'results_02')
+    saveDir = os.path.join( saveDir, prefix + 'iter_%06d' % iter )
 
     if not os.path.exists(saveDir):
         os.makedirs(saveDir)
@@ -168,9 +179,8 @@ if __name__ == '__main__':
     model = args.model
 
     cfg_from_file( os.path.join(expDir, 'faster_rcnn_end2end_kitti_%s.yml' % model ))
-        
-    model = model.split('_')[0].lower()
-    caffemodel = os.path.join(expDir, 'snapshots/%s_iter_%d.caffemodel' % (model, args.iter))
+            
+    caffemodel = os.path.join(expDir, 'snapshots/%s_iter_%d.caffemodel' % (model.split('_')[0].lower(), args.iter))
     prototxt = os.path.join(expDir, 'models/network.prototxt')
 
     if args.cpu_mode:
@@ -190,8 +200,12 @@ if __name__ == '__main__':
     files.sort()
     for ii, file in enumerate(files):
         # gts = read_gts( file.replace('image_02', 'label_02').replace('png', 'txt') )
+        im_names = [ file ]
+        if 'edge' in cfg.INPUT:
+            im_names.append( file.replace('image_02', 'edge_02') )
+
         gts = []
-        timer = demo(net, file, gts, args.conf_thres, args.nms_thres, args.iter)
+        timer = demo(net, im_names, gts, args.conf_thres, args.nms_thres, args.iter, model)
 
         print '[im_detect, {:s}]: {:d}/{:d} {:.3f}s {:.3f}s'.format(os.path.basename(file), ii + 1, 
                 len(files), timer['im_detect'].average_time, 

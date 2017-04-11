@@ -29,13 +29,13 @@ class ProposalLayer(caffe.Layer):
         
         if cfg.NET.KMEANS_ANCHOR:
 
-            if cfg.TRAIN.SCALES[0] == 375:
+            if cfg.NET.ANCHOR_BASE == 1:
                 self._anchors = kitti_kmeans_anchors_1x(cfg.NET.NUM_ANCHORS)
-            elif cfg.TRAIN.SCALES[0] == 755:
+            elif cfg.NET.ANCHOR_BASE == 2:
                 self._anchors = kitti_kmeans_anchors_2x(cfg.NET.NUM_ANCHORS)
-            elif cfg.TRAIN.SCALES[0] == 1510:
+            elif cfg.NET.ANCHOR_BASE == 3:
                 self._anchors = kitti_kmeans_anchors_4x(cfg.NET.NUM_ANCHORS)
-            elif cfg.TRAIN.SCALES[0] == 3020:
+            elif cfg.NET.ANCHOR_BASE == 4:
                 self._anchors = kitti_kmeans_anchors_8x(cfg.NET.NUM_ANCHORS)
             else:
                 raise NotImplementedError      

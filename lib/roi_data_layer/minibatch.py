@@ -13,10 +13,11 @@ import cv2
 from fast_rcnn.config import cfg
 from utils.blob import prep_im_for_blob, im_list_to_blob, prep_im_for_blob_randscale
 
-from transform.image_transform import _flip, _crop_resize, _gamma_correction
+# from transform.image_transform import _flip, _crop_resize, _gamma_correction
 # from scipy import misc
 
 def get_minibatch(roidb, num_classes, randScale):
+# def get_minibatch(roidb, num_classes):
     """Given a roidb, construct a minibatch sampled from it."""
     num_images = len(roidb)
     # Sample random scales to use for each image in this batch
@@ -32,11 +33,14 @@ def get_minibatch(roidb, num_classes, randScale):
     # im_blob, im_scales = _get_image_blob(roidb, random_scale_inds)
     # blobs = {'data': im_blob}
 
-    input_blobs = _get_input_blob(roidb, random_scale_inds, randScale)
-    im_scales = input_blobs[-1]
+    # input_blobs = _get_input_blob(roidb, random_scale_inds, randScale)
+    # im_scales = input_blobs[-1]
+    # blobs = input_blobs[0]
+    if not randScale:
+        random_scale_inds = 3
 
-    # blobs = { item.key(): item.value() for item in input_blobs[0] }
-    blobs = input_blobs[0]
+    blobs, im_scales = _get_input_blob(roidb, random_scale_inds)    
+        
     
     if cfg.TRAIN.HAS_RPN:
         assert len(im_scales) == 1, "Single batch only"
@@ -51,6 +55,11 @@ def get_minibatch(roidb, num_classes, randScale):
         gt_boxes[:, 4] = roidb[0]['gt_classes'][gt_inds]
         gt_boxes[:, 5] = roidb[0]['gt_occ'][gt_inds]
         gt_boxes[:, 6] = roidb[0]['gt_trunc'][gt_inds]
+
+        ignore = np.where( gt_boxes[:,3] - gt_boxes[:,1] + 1 < cfg.TRAIN.MIN_HEIGHT )
+        if len(ignore) > 0:
+            gt_boxes[ignore, 4] = 4     # imdb._class_to_ind[ 'Ignore' ] == 4
+
 
         blobs['gt_boxes'] = gt_boxes
         blobs['im_info'] = np.array(
@@ -142,128 +151,220 @@ def _sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
 
     return labels, overlaps, rois, bbox_targets, bbox_inside_weights
 
-def _get_input_blob(roidb, scale_inds, randScale):
+def _get_input_blob(roidb, scale_inds):
     """Builds an input blob from the images in the roidb at the specified
     scales.
     """
+
+    ## On-the-fly Data augmentation
+    def _flip(image):
+        return image[:, ::-1, ...]
+
+    def _gamma_correction(image):        
+        # invGamma = 1.0 / npr.uniform(cfg.TRAIN.GAMMA_RNG[0], cfg.TRAIN.GAMMA_RNG[1], size=(1))
+        invGamma = npr.uniform(cfg.TRAIN.GAMMA_RNG[0], cfg.TRAIN.GAMMA_RNG[1], size=(1))
+        table = np.array( [((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
+        image_g = cv2.LUT( image, table )
+        return image_g
+
+
     num_images = len(roidb)
-    processed_ims = []
-    # im_scales = []
-    # blob = {'scales': []}
+        
     blob = {}
     for i in xrange(num_images):
 
-        n_input_types = len(roidb[i]['input'])
+        target_size = cfg.TRAIN.SCALES[scale_inds[i]]
+
+        input_types = cfg.INPUT
+
+        if 'image' in input_types:
+            im = cv2.imread(roidb[i]['image'])
+            if roidb[i]['flipped']:
+                im = _flip(im)
+            if cfg.TRAIN.USE_AUGMENTATION.GAMMA and npr.random() > 0.5:
+                im = _gamma_correction(im)
+
+            # if roidb[i]['flipped']:
+            #     im = _flip(im)
+            # if roidb[i]['gamma']:
+            #     im = _gamma_correction(im)
+
+
+            im, im_scale = prep_im_for_blob(im, cfg.PIXEL_MEANS, target_size, cfg.TRAIN.MAX_SIZE)                    
+            blob['image'] = im_list_to_blob([im])
+
+        else:
+            print('Keyword "image" should be specified in cfg.INPUT.')
+            raise NotImplementedError
+
+
+        if 'depth' in input_types:
+            depth = cv2.imread(roidb[i]['depth'], -1)  # 16-bit png
+
+            # From kitti/flow2015/devkit/matlab/disp_read.m,
+            assert depth.dtype == np.uint16, "Date type of depth image must be uint16."
                 
-        width = roidb[i]['width']
-        height = roidb[i]['height']
-        
-        N = len(cfg.TRAIN.USE_AUGMENTATION.IM_SCALES)    
-        im_scale = cfg.TRAIN.USE_AUGMENTATION.IM_SCALES[ npr.choice(N, 1)]
-        
-        for j in xrange(n_input_types):
-            input_type = roidb[i]['input'][j].keys()[0]
-            input_file = roidb[i]['input'][j].values()[0]
-
-
-            if input_type == 'image':
-                input_data = cv2.imread(input_file, -1)                
-
-            elif input_type == 'depth':
-
-                ## DispFlowNet
-                with open(input_file, 'rb') as f:
-                    assert( f.readline() == 'float\n' )
-                    assert( int(f.readline()) == 3 )
-                    w = int(f.readline())
-                    h = int(f.readline())
-                    c = int(f.readline())
-
-                    import array
-                    disp = array.array('f')
-                    disp.fromfile(f, h*w*c)
-
-                    if c != 1:
-                        disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w, c)
-                    else:
-                        disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w)
-
-                    input_data = roidb[i]['focal'] * roidb[i]['baseline'] / disp
-
-                    # [yy, xx] = np.meshgrid(np.arange(width), np.arange(height))
-                    # yy = yy.astype(np.float32) / height - 0.5
-                    # xx = xx.astype(np.float32) / width - 0.5
-
-                    # max_depth = 100.0
-                    # input_data = input_data / max_depth - 0.5 
-                    # input_data = np.stack( (input_data, xx, yy), axis=2 )
-            elif input_type == 'edge':
-                input_data = cv2.imread(input_file, -1)
-                #input_data = input_data.astype(np.float32) / 255.0 - 0.5
-                input_data = input_data.astype(np.float32) - 128.0
-
-            else:
-                raise NotImplementedError
-
-            # # Load 16-bit uint png image  
-            # input_data = cv2.imread(input_file, -1)
-            # # input_data = misc.imread( input_file )
+            depth = depth.astype(np.float32) / 256.0        
             
-            # if input_data.dtype == np.uint16:
-            #     # From kitti/flow2015/devkit/matlab/disp_read.m,
-            #     input_data = input_data.astype(np.float32) / 256.0        
+            mask = depth == 0.0
+            depth[ mask ] = -1
+            depth = roidb[i]['focal'] * roidb[i]['baseline'] / depth
+            depth[ mask ] = 0.0            
 
-            #     if cfg.USE_METRIC_DEPTH:
-            #         mask = input_data == 0.0
-            #         input_data[ mask ] = -1
-            #         input_data = roidb[i]['focal'] * roidb[i]['baseline'] / input_data
-            #         input_data[ mask ] = 0.0
-
-            #         [yy, xx] = np.meshgrid(np.arange(width), np.arange(height))
-            #         yy = yy.astype(np.float32) / height - 0.5
-            #         xx = xx.astype(np.float32) / width - 0.5
-
-            #         max_depth = 100.0
-            #         input_data = input_data / max_depth - 0.5 
-            #         input_data = np.stack( (input_data, xx, yy), axis=2 )
-
-
-            # if input_file.endswith('.png'):
-            #     input_data = cv2.imread(input_file)
-            # else:                
-            #     input_data = np.load(input_file)
-            #     input_data[input_data == -1] = 0
-
-            #     # input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
-            #     # input_data = np.asarray(input_data)
+            max_depth = 100.0
+            depth = depth / max_depth
 
             if roidb[i]['flipped']:
-                input_data = _flip(input_data)
-            if roidb[i]['gamma'] and input_type != 'depth' and input_type != 'edge':
-                input_data = _gamma_correction(input_data)
-            if roidb[i]['crop'] is not None:
-                input_data = _crop_resize(input_data, roidb[i]['crop'])
+                depth = _flip(depth)
 
-            target_size = cfg.TRAIN.SCALES[scale_inds[i]]
-            mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 0.0
+            depth, _ = prep_im_for_blob(depth, 0.5, target_size, cfg.TRAIN.MAX_SIZE)
+            blob['depth'] = im_list_to_blob([depth])
 
-            # input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
-                                            # cfg.TRAIN.MAX_SIZE)
-            if randScale:
-                input_data = prep_im_for_blob_randscale(input_data, mean_pixels, im_scale)
-            else:
-                input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
-                                            cfg.TRAIN.MAX_SIZE)
-                        
-            # im_scales.append(im_scale)
-            # blob.append( { input_type: input_data } )
-            # processed_ims.append(input_data)
 
-            # Create a blob to hold the input images            
-            blob[input_type] = im_list_to_blob([input_data])
+        if 'edge' in input_types:
+            edge = cv2.imread(roidb[i]['edge'], -1)
 
-    # blob['scales'] = [ im_scale ]
+            if roidb[i]['flipped']:
+                edge = _flip(edge)
+
+            edge, _ = prep_im_for_blob(edge, 128.0, target_size, cfg.TRAIN.MAX_SIZE)
+            blob['edge'] = im_list_to_blob([edge])
+    
+    try:
+        sz = []
+        for key, val in blob.items():
+            sz.append( val.shape[2:] )
+
+        assert len(set(sz)) == 1, "Input sizes should be equal."
+
+    except:
+        import ipdb
+        ipdb.set_trace()
+
     return blob, [im_scale]
+
+# def _get_input_blob(roidb, scale_inds, randScale):
+#     """Builds an input blob from the images in the roidb at the specified
+#     scales.
+#     """
+#     num_images = len(roidb)
+#     processed_ims = []
+#     # im_scales = []
+#     # blob = {'scales': []}
+#     blob = {}
+#     for i in xrange(num_images):
+
+#         n_input_types = len(roidb[i]['input'])
+                
+#         width = roidb[i]['width']
+#         height = roidb[i]['height']
+        
+#         N = len(cfg.TRAIN.USE_AUGMENTATION.IM_SCALES)    
+#         im_scale = cfg.TRAIN.USE_AUGMENTATION.IM_SCALES[ npr.choice(N, 1)]
+        
+#         for j in xrange(n_input_types):
+#             input_type = roidb[i]['input'][j].keys()[0]
+#             input_file = roidb[i]['input'][j].values()[0]
+
+
+#             if input_type == 'image':
+#                 input_data = cv2.imread(input_file, -1)                
+
+#             elif input_type == 'depth':
+
+#                 ## DispFlowNet
+#                 with open(input_file, 'rb') as f:
+#                     assert( f.readline() == 'float\n' )
+#                     assert( int(f.readline()) == 3 )
+#                     w = int(f.readline())
+#                     h = int(f.readline())
+#                     c = int(f.readline())
+
+#                     import array
+#                     disp = array.array('f')
+#                     disp.fromfile(f, h*w*c)
+
+#                     if c != 1:
+#                         disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w, c)
+#                     else:
+#                         disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w)
+
+#                     input_data = roidb[i]['focal'] * roidb[i]['baseline'] / disp
+
+#                     # [yy, xx] = np.meshgrid(np.arange(width), np.arange(height))
+#                     # yy = yy.astype(np.float32) / height - 0.5
+#                     # xx = xx.astype(np.float32) / width - 0.5
+
+#                     # max_depth = 100.0
+#                     # input_data = input_data / max_depth - 0.5 
+#                     # input_data = np.stack( (input_data, xx, yy), axis=2 )
+#             elif input_type == 'edge':
+#                 input_data = cv2.imread(input_file, -1)
+#                 #input_data = input_data.astype(np.float32) / 255.0 - 0.5
+#                 input_data = input_data.astype(np.float32) - 128.0
+
+#             else:
+#                 raise NotImplementedError
+
+#             # # Load 16-bit uint png image  
+#             # input_data = cv2.imread(input_file, -1)
+#             # # input_data = misc.imread( input_file )
+            
+#             # if input_data.dtype == np.uint16:
+#             #     # From kitti/flow2015/devkit/matlab/disp_read.m,
+#             #     input_data = input_data.astype(np.float32) / 256.0        
+
+#             #     if cfg.USE_METRIC_DEPTH:
+#             #         mask = input_data == 0.0
+#             #         input_data[ mask ] = -1
+#             #         input_data = roidb[i]['focal'] * roidb[i]['baseline'] / input_data
+#             #         input_data[ mask ] = 0.0
+
+#             #         [yy, xx] = np.meshgrid(np.arange(width), np.arange(height))
+#             #         yy = yy.astype(np.float32) / height - 0.5
+#             #         xx = xx.astype(np.float32) / width - 0.5
+
+#             #         max_depth = 100.0
+#             #         input_data = input_data / max_depth - 0.5 
+#             #         input_data = np.stack( (input_data, xx, yy), axis=2 )
+
+
+#             # if input_file.endswith('.png'):
+#             #     input_data = cv2.imread(input_file)
+#             # else:                
+#             #     input_data = np.load(input_file)
+#             #     input_data[input_data == -1] = 0
+
+#             #     # input_data = np.memmap(input_file, dtype=np.float32, shape=(height, width))
+#             #     # input_data = np.asarray(input_data)
+
+#             if roidb[i]['flipped']:
+#                 input_data = _flip(input_data)
+#             if roidb[i]['gamma'] and input_type != 'depth' and input_type != 'edge':
+#                 input_data = _gamma_correction(input_data)
+#             if roidb[i]['crop'] is not None:
+#                 input_data = _crop_resize(input_data, roidb[i]['crop'])
+
+#             target_size = cfg.TRAIN.SCALES[scale_inds[i]]
+#             mean_pixels = cfg.PIXEL_MEANS if input_type == 'image' else 0.0
+
+#             # input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
+#                                             # cfg.TRAIN.MAX_SIZE)
+#             if randScale:
+#                 input_data = prep_im_for_blob_randscale(input_data, mean_pixels, im_scale)
+#             else:
+#                 input_data, im_scale = prep_im_for_blob(input_data, mean_pixels, target_size,
+#                                             cfg.TRAIN.MAX_SIZE)
+                        
+#             # im_scales.append(im_scale)
+#             # blob.append( { input_type: input_data } )
+#             # processed_ims.append(input_data)
+
+#             # Create a blob to hold the input images            
+#             blob[input_type] = im_list_to_blob([input_data])
+
+#     # blob['scales'] = [ im_scale ]
+#     return blob, [im_scale]
 
 def _get_image_blob(roidb, scale_inds):
     """Builds an input blob from the images in the roidb at the specified

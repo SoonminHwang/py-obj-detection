@@ -28,15 +28,17 @@ def prepare_roidb(imdb):
 
         # roidb[i]['image'] = imdb.image_path_at(i)
 
-        assert len(imdb.input_path_at) == len(imdb.input_path_from_index), \
-            "Invalid number of input func. Check datasets/kitti.py"
+        # assert len(imdb.input_path_at) == len(imdb.input_path_from_index), \
+        #     "Invalid number of input func. Check datasets/kitti.py"
+        # roidb[i]['input'] = []
+        # for _n in range( len(imdb.input_path_at) ):
+        #     input_type = imdb.input_types[_n]
+        #     input_file = imdb.input_path_at[_n](i)
+        #     roidb[i]['input'].append( {input_type: input_file} )            
+        roidb[i]['image'] = imdb.image_path_at(i)
+        roidb[i]['depth'] = imdb.depth_path_at(i)
+        roidb[i]['edge'] = imdb.edge_path_at(i)
 
-        roidb[i]['input'] = []
-        for _n in range( len(imdb.input_path_at) ):
-            input_type = imdb.input_types[_n]
-            input_file = imdb.input_path_at[_n](i)
-            roidb[i]['input'].append( {input_type: input_file} )
-            
         # roidb[i]['width'] = sizes[i][0]
         # roidb[i]['height'] = sizes[i][1]
 

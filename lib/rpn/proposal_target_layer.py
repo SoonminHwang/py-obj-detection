@@ -125,7 +125,8 @@ def _get_bbox_regression_labels(bbox_target_data, num_classes):
     inds = np.where(clss > 0)[0]
     for ind in inds:
         cls = clss[ind]
-        # if cls == 4: continue   # ignore
+        
+        if cls == 4: continue   # ignore. 
 
         start = 4 * cls
         end = start + 4
@@ -195,5 +196,8 @@ def _sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num_clas
 
     bbox_targets, bbox_inside_weights = \
         _get_bbox_regression_labels(bbox_target_data, num_classes)
+
+    # imdb._class_to_ind[ 'Ignore' ] == 4
+    labels[ labels == 4 ] = -1
 
     return labels, rois, bbox_targets, bbox_inside_weights

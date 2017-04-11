@@ -43,7 +43,7 @@ class kitti(imdb):
         imdb.__init__(self, 'kitti_' + year + '_' + image_set)
         # KITTI specific config options
         self.config = {'cleanup' : True,                       
-                       'hRng' : [10, np.inf], # Min. 20 x 50 or 25 x 40
+                       'hRng' : [cfg.TRAIN.MIN_HEIGHT, np.inf], # Min. 20 x 50 or 25 x 40
                        'occLevel' : [0, 1, 2],       # 0: fully visible, 1: partly occ, 2: largely occ, 3: unknown
                        'truncRng' : [0, 0.5]     # Only partially-truncated
                       }
@@ -126,21 +126,21 @@ class kitti(imdb):
         # do not have gt annotations)
         #self._gt_splits = ['train', 'val', 'minival']
 
-        # Add input modalities        
-        # self.input_types = ['image', 'depth']
-        self.input_types = cfg.INPUT
+        # # Add input modalities        
+        # # self.input_types = ['image', 'depth']
+        # self.input_types = cfg.INPUT
 
-        self.input_path_at = []
-        self.input_path_from_index = []
-        # self.input_preprocess = []
+        # self.input_path_at = []
+        # self.input_path_from_index = []
+        # # self.input_preprocess = []
 
-        for modal in self.input_types:
-            input_path_at = eval('self.' + modal + '_path_at')
-            input_path_from_index = eval('self.' + modal + '_path_from_index')
-            # input_preprocess = eval('self.' + modal + '_preprocess')
+        # for modal in self.input_types:
+        #     input_path_at = eval('self.' + modal + '_path_at')
+        #     input_path_from_index = eval('self.' + modal + '_path_from_index')
+        #     # input_preprocess = eval('self.' + modal + '_preprocess')
             
-            self.input_path_at.append( input_path_at )
-            self.input_path_from_index.append( input_path_from_index )
+        #     self.input_path_at.append( input_path_at )
+        #     self.input_path_from_index.append( input_path_from_index )
 
 
     # def image_preprocess(self, im, pixel_means, target_size, max_size):
@@ -205,8 +205,8 @@ class kitti(imdb):
         """
         Construct an image path from the image's "index" identifier.
         """
-        # image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_2', '%06d.png' % index)
-        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'flatten_image_2', '%06d.png' % index)
+        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_2', '%06d.png' % index)
+        # image_file = osp.join(self._data_path, self._view_map[self._image_set], 'flatten_image_2', '%06d.png' % index)
         # im_ann = self._KITTI.loadImgs(index)[0]
         # fName = self._image_index[index]
         # image_path = osp.join(self._data_path, 'images', self._data_name, im_ann['file_name'])
@@ -225,8 +225,8 @@ class kitti(imdb):
         """
         Construct an image path from the image's "index" identifier.
         """
-        # image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_2', '%06d.png' % index)
-        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'flatten_edge_2', '%06d.png' % index)
+        image_file = osp.join(self._data_path, self._view_map[self._image_set], 'image_2', '%06d.png' % index)
+        # image_file = osp.join(self._data_path, self._view_map[self._image_set], 'flatten_edge_2', '%06d.png' % index)
         # im_ann = self._KITTI.loadImgs(index)[0]
         # fName = self._image_index[index]
         # image_path = osp.join(self._data_path, 'images', self._data_name, im_ann['file_name'])
@@ -271,10 +271,10 @@ class kitti(imdb):
         # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap', '%06d.npy' % index)
 
         # 16bit uint png image
-        # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap_2', '%06d.png' % index)
+        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'velo_dispmap_2', '%06d.png' % index)
 
         # float32, binary file
-        depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'DispNetCorr1D-K_2', '%07d.float3' % index)
+        # depth_file = osp.join(self._data_path, self._view_map[self._image_set], 'DispNetCorr1D-K_2', '%07d.float3' % index)
 
 
         assert osp.exists(depth_file), \
@@ -447,7 +447,8 @@ class kitti(imdb):
 
             # All valid annotations must satisfy below condition
             # if x2 >= x1 and y2 >= y1:
-            if x2 >= x1 and y2 >= y1 and cls != self._class_to_ind['Ignore']:
+            # if x2 >= x1 and y2 >= y1 and cls != self._class_to_ind['Ignore']:
+            if x2 >= x1 and y2 >= y1:
                 obj['clean_bbox'] = [x1, y1, x2, y2]
                 valid_objs.append(obj)
 
@@ -497,17 +498,36 @@ class kitti(imdb):
                 'gt_trunc': gt_trunc,
                 }
 
-
     def append_ped_cyc_images(self):
         roidb_old = self.roidb[:]
 
-        ped_ind, cyc_ind = self._class_to_ind['Pedestrian'], self._class_to_ind['Cyclist']
+        ped_ind, cyc_ind, car_ind = self._class_to_ind['Pedestrian'], self._class_to_ind['Cyclist'], self._class_to_ind['Car']
+        
+        ratios_ped = 6
+        ratios_cyc = 17
 
         for ix, r in enumerate(roidb_old):
-            if ped_ind in r['gt_classes'] or cyc_ind in r['gt_classes']:
-                r['gamma'] = True
-                self.roidb.append(r)
-                self._image_index.append( self._image_index[ix] )
+            if ped_ind in r['gt_classes']:
+                # r['gamma'] = True
+                for ii in xrange(ratios_ped):
+                    self.roidb.append(r)
+                    self._image_index.append( self._image_index[ix] )
+
+            elif cyc_ind in r['gt_classes']:
+                for ii in xrange(ratios_cyc):
+                    self.roidb.append(r)
+                    self._image_index.append( self._image_index[ix] )
+
+    # def append_ped_cyc_images(self):
+    #     roidb_old = self.roidb[:]
+
+    #     ped_ind, cyc_ind = self._class_to_ind['Pedestrian'], self._class_to_ind['Cyclist']
+
+    #     for ix, r in enumerate(roidb_old):
+    #         if ped_ind in r['gt_classes'] or cyc_ind in r['gt_classes']:
+    #             r['gamma'] = True
+    #             self.roidb.append(r)
+    #             self._image_index.append( self._image_index[ix] )
                 
 
     def _kitti_results_template(self):

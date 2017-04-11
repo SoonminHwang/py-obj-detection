@@ -69,11 +69,14 @@ __C.NET.NUM_ANCHORS = 9
 
 __C.NET.KMEANS_ANCHOR = False
 
+__C.NET.ANCHOR_BASE = 2
 
 #
 # Training options
 #
 __C.TRAIN = edict()
+
+__C.TRAIN.MIN_HEIGHT = 20
 
 # Use data augmentation
 __C.TRAIN.USE_AUGMENTATION = edict()
@@ -92,7 +95,7 @@ __C.TRAIN.USE_AUGMENTATION.IM_SCALES = (0.25, 0.5, 0.75, 1.0, 1.25, 1.5)
 # __C.TRAIN.SCALE_RNG = (0.85, 0.95)
 # __C.TRAIN.GAMMA_RNG = (0.8, 1.2)
 __C.TRAIN.SCALE_RNG = (0.75, 0.95)
-__C.TRAIN.GAMMA_RNG = (0.5, 1.5)
+__C.TRAIN.GAMMA_RNG = (0.5, 2.0)
 
 # Scales to use during training (can list multiple scales)
 # Each scale is the pixel size of an image's shortest side
@@ -184,6 +187,9 @@ __C.TRAIN.RPN_BBOX_INSIDE_WEIGHTS = (1.0, 1.0, 1.0, 1.0)
 # and give negatives a weight of (1 - p)
 # Set to -1.0 to use uniform example weighting
 __C.TRAIN.RPN_POSITIVE_WEIGHT = -1.0
+
+# preclude rois intersected with dontcare areas above the value
+__C.TRAIN.DONTCARE_AREA_INTERSECTION_HI = 0.7
 
 
 #

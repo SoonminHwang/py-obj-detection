@@ -289,98 +289,6 @@ def im_detect_depth(net, ims, boxes=None):
     return scores, pred_boxes
 
 
-def im_detect_edge(net, ims, boxes=None):
-    """Detect object classes in an image given object proposals.
-
-    Arguments:
-        net (caffe.Net): Fast R-CNN network to use
-        im (ndarray): color image to test (in BGR order)
-        boxes (ndarray): R x 4 array of object proposals or None (for RPN)
-
-    Returns:
-        scores (ndarray): R x K array of object class scores (K includes
-            background as object category 0)
-        boxes (ndarray): R x (4*K) array of predicted bounding boxes
-    """
-    # blobs, im_scales = _get_blobs(ims[0], ims[1], boxes)
-    blobs = {}
-    blobs['image'], _ = _get_image_blob(ims[0])
-    blobs['edge'], im_scales = _get_image_blob(ims[1], 0.0)
-
-    # When mapping from image ROIs to feature map ROIs, there's some aliasing
-    # (some distinct image ROIs get mapped to the same feature ROI).
-    # Here, we identify duplicate feature ROIs, so we only compute features
-    # on the unique subset.
-    if cfg.DEDUP_BOXES > 0 and not cfg.TEST.HAS_RPN:
-        v = np.array([1, 1e3, 1e6, 1e9, 1e12])
-        hashes = np.round(blobs['rois'] * cfg.DEDUP_BOXES).dot(v)
-        _, index, inv_index = np.unique(hashes, return_index=True,
-                                        return_inverse=True)
-        blobs['rois'] = blobs['rois'][index, :]
-        boxes = boxes[index, :]
-
-    if cfg.TEST.HAS_RPN:
-        im_blob = blobs['image']
-        blobs['im_info'] = np.array(
-            [[im_blob.shape[2], im_blob.shape[3], im_scales[0]]],
-            dtype=np.float32)
-
-    # reshape network inputs
-    net.blobs['image'].reshape(*(blobs['image'].shape))
-    net.blobs['edge'].reshape(*(blobs['edge'].shape))
-    if cfg.TEST.HAS_RPN:
-        net.blobs['im_info'].reshape(*(blobs['im_info'].shape))
-    else:
-        net.blobs['rois'].reshape(*(blobs['rois'].shape))
-
-    # do forward
-    # forward_kwargs = {'data': blobs['data'].astype(np.float32, copy=False)}
-    forward_kwargs = {'image': blobs['image'].astype(np.float32, copy=False), \
-                      'edge': blobs['edge'].astype(np.float32, copy=False)}
-    if cfg.TEST.HAS_RPN:
-        forward_kwargs['im_info'] = blobs['im_info'].astype(np.float32, copy=False)
-    else:
-        forward_kwargs['rois'] = blobs['rois'].astype(np.float32, copy=False)
-
-    blobs_out = net.forward(**forward_kwargs)
-
-    if cfg.TEST.HAS_RPN:
-        assert len(im_scales) == 1, "Only single-image batch implemented"
-        rois = net.blobs['rois'].data.copy()
-        # unscale back to raw image space
-        boxes = rois[:, 1:5] / im_scales[0]
-
-    if cfg.TEST.SVM:
-        # use the raw scores before softmax under the assumption they
-        # were trained as linear SVMs
-        scores = net.blobs['cls_score'].data
-    else:
-        # use softmax estimated probabilities
-        try:
-            scores = blobs_out['cls_prob']
-        except:
-            scores = net.blobs['cls_prob'].data.copy()
-
-    if cfg.TEST.BBOX_REG:
-        # Apply bounding-box regression deltas
-        try:
-            box_deltas = blobs_out['bbox_pred']
-        except:
-            box_deltas = net.blobs['bbox_pred'].data.copy()
-
-        pred_boxes = bbox_transform_inv(boxes, box_deltas)
-        pred_boxes = clip_boxes(pred_boxes, ims[0].shape)
-    else:
-        # Simply repeat the boxes, once for each class
-        pred_boxes = np.tile(boxes, (1, scores.shape[1]))
-
-    if cfg.DEDUP_BOXES > 0 and not cfg.TEST.HAS_RPN:
-        # Map scores and predictions back to the original set of boxes
-        scores = scores[inv_index, :]
-        pred_boxes = pred_boxes[inv_index, :]
-
-    # return scores, pred_boxes, net.blobs['bbox_list'].data.copy()
-    return scores, pred_boxes
 
 def vis_detections(im, class_name, dets, thresh=0.3):
     """Visual debugging of detections."""
@@ -460,39 +368,29 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=No
             im = cv2.imread(imdb.image_path_at(i))
 
             if 'depth' in cfg.INPUT:
+                dp = cv2.imread(imdb.depth_path_at(i), -1)
+                # input_data = misc.imread( input_file )
+
+                if dp.dtype == np.uint16:
+                # From kitti/flow2015/devkit/matlab/disp_read.m,
+                    dp = dp.astype(np.float32) / 256.0        
+
+                if cfg.USE_METRIC_DEPTH:
+                    mask = dp == 0.0
+                    dp[ mask ] = -1
+                    dp = imdb.roidb[i]['focal'] * imdb.roidb[i]['baseline'] / dp
+                    dp[ mask ] = 0.0
+
+                    height, width = dp.shape
                 
-                try:
-                    dp = cv2.imread(imdb.depth_path_at(i), -1)
-                    # input_data = misc.imread( input_file )
+                    [yy, xx] = np.meshgrid(np.arange(width), np.arange(height))
+                    yy = yy.astype(np.float32) / height - 0.5
+                    xx = xx.astype(np.float32) / width - 0.5
 
-                    if dp.dtype == np.uint16:
-                    # From kitti/flow2015/devkit/matlab/disp_read.m,
-                        dp = dp.astype(np.float32) / 256.0        
-
-                    if cfg.USE_METRIC_DEPTH:
-                        mask = dp == 0.0
-                        dp[ mask ] = -1
-                        dp = imdb.roidb[i]['focal'] * imdb.roidb[i]['baseline'] / dp
-                        dp[ mask ] = 0.0
-                except:
-                    ## DispFlowNet
-                    with open(imdb.depth_path_at(i), 'rb') as fp:
-                        assert( fp.readline() == 'float\n' )
-                        assert( int(fp.readline()) == 3 )
-                        w = int(fp.readline())
-                        h = int(fp.readline())
-                        c = int(fp.readline())
-
-                        import array
-                        disp = array.array('f')
-                        disp.fromfile(fp, h*w*c)
-
-                    if c != 1:
-                        disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w, c)
-                    else:
-                        disp = -1 * np.asarray(disp, dtype=np.float32).reshape(h, w)
-
-                    dp = imdb.roidb[i]['focal'] * imdb.roidb[i]['baseline'] / disp
+                    max_depth = 100.0
+                    dp = dp / max_depth - 0.5 
+                    dp = np.stack( (dp, xx, yy), axis=2 )
+                    
 
                 # height, width = im.shape[:2]
                 # dp = np.load(imdb.depth_path_at(i))
@@ -505,18 +403,6 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False, output_dir=No
                 _t['im_detect'].tic()
                 scores, boxes = im_detect_depth(net, ims, box_proposals)
                 _t['im_detect'].toc()
-
-            elif 'edge' in cfg.INPUT:
-
-                input_data = cv2.imread(imdb.edge_path_at(i), -1)        
-                input_data = input_data.astype(np.float32) - 128.0
-
-                ims = [im, input_data]        
-
-                _t['im_detect'].tic()
-                scores, boxes = im_detect_edge(net, ims)
-                _t['im_detect'].toc()
-
             else:
                 _t['im_detect'].tic()
                 scores, boxes = im_detect(net, im, box_proposals)

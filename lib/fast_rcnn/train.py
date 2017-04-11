@@ -234,6 +234,7 @@ class SolverWrapper(object):
         """Network training loop."""
         last_snapshot_iter = -1
         visualization_iter = int(cfg.TRAIN.SNAPSHOT_ITERS/10)
+        # visualization_iter = 1        
 
         timer = Timer()
         model_paths = []
@@ -242,6 +243,9 @@ class SolverWrapper(object):
             timer.tic()
             self.solver.step(1)
             timer.toc()
+
+            # import ipdb
+            # ipdb.set_trace()
 
             if self.solver.iter % (10 * self.solver_param.display) == 0:
                 print 'speed: {:.3f}s / iter'.format(timer.average_time)
@@ -264,24 +268,24 @@ class SolverWrapper(object):
 
 def get_training_roidb(imdb, isTrain):
     """Returns a roidb (Region of Interest database) for use in training."""
+    if isTrain:
+        print 'Appending ped/cyc training examples...',
+        imdb.append_ped_cyc_images()               
+        print 'done'
+        
     if cfg.TRAIN.USE_AUGMENTATION.FLIP and isTrain:        
         print 'Appending horizontally-flipped training examples...',
         imdb.append_flipped_images()
         print 'done'
-    if cfg.TRAIN.USE_AUGMENTATION.CROP and isTrain:
-        print 'Appending cropped & resized training examples...',
-        imdb.append_crop_resize_images()
-        print 'done'
-    if cfg.TRAIN.USE_AUGMENTATION.GAMMA and isTrain:
-        print 'Appending photometrc transformed training examples...',
-        imdb.append_photometric_transformed_images()
-        print 'done'
-    if isTrain:
-        print 'Appending ped/cyc training examples...',
-        imdb.append_ped_cyc_images()       
-        print 'Appending ped/cyc training examples...',
-        imdb.append_ped_cyc_images()       
-        print 'done'
+    # if cfg.TRAIN.USE_AUGMENTATION.CROP and isTrain:
+    #     print 'Appending cropped & resized training examples...',
+    #     imdb.append_crop_resize_images()
+    #     print 'done'
+    # if cfg.TRAIN.USE_AUGMENTATION.GAMMA and isTrain:
+    #     print 'Appending photometrc transformed training examples...',
+    #     imdb.append_photometric_transformed_images()
+    #     print 'done'
+
 
     print 'Preparing training data...'
     rdl_roidb.prepare_roidb(imdb)

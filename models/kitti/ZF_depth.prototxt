@@ -61,6 +61,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.1 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -109,6 +110,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -160,6 +162,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -208,6 +211,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -270,6 +274,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 
@@ -289,6 +294,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.02 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -312,6 +318,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.02 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -335,6 +342,7 @@ layer {
 
     weight_filler { type: "gaussian" std: 0.02 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -358,6 +366,7 @@ layer {
     kernel_size: 3 pad: 1 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -383,6 +392,7 @@ layer {
     # weight_filler { type: "gaussian" std: 0.01 }
     weight_filler { type: "gaussian" std: 0.02 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -399,6 +409,7 @@ layer {
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
+    engine: CUDNN
   }
 }
 layer {
@@ -553,7 +564,7 @@ layer {
     num_output: 4096
 
     weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }
+    bias_filler { type: "constant" value: 0 }    
   }
 }
 layer {
@@ -583,7 +594,7 @@ layer {
     num_output: 4096
 
     weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }
+    bias_filler { type: "constant" value: 0 }    
   }
 }
 layer {
@@ -613,7 +624,7 @@ layer {
     num_output: 4    
     
     weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }    
+    bias_filler { type: "constant" value: 0 }        
   }
 }
 layer {
@@ -627,7 +638,7 @@ layer {
     num_output: 16  # 21 x 4 -> 4 x 4    
 
     weight_filler { type: "gaussian" std: 0.001 }
-    bias_filler { type: "constant" value: 0 }
+    bias_filler { type: "constant" value: 0 }    
   }
 }
 
@@ -672,47 +683,47 @@ layer {
   include { phase: TEST }
 }
 
-layer {
-    type: 'Python'
-    name: 'detections'
-    # gt_bbox_list is a batch_size x num_boxes_after_nms x 5 blob        
-    top: 'bbox_list'
-    bottom: 'cls_prob'
-    bottom: 'bbox_pred'
-    bottom: 'rois'
-    bottom: 'im_info'
-    python_param {
-        module: 'eval.detectnet'
-        layer: 'DetectionLayer'            
-        param_str : "'nms_thres': 0.3"
-    }
-  include: { phase: TEST }
-}
+#layer {
+#    type: 'Python'
+#    name: 'detections'
+#    # gt_bbox_list is a batch_size x num_boxes_after_nms x 5 blob        
+#    top: 'bbox_list'
+#    bottom: 'cls_prob'
+#    bottom: 'bbox_pred'
+#    bottom: 'rois'
+#    bottom: 'im_info'
+#    python_param {
+#        module: 'eval.detectnet'
+#        layer: 'DetectionLayer'            
+#        param_str : "'nms_thres': 0.3"
+#    }
+#  include: { phase: TEST }
+#}
 
-layer {
-  type: 'Python'
-  name: 'mAP'    
-  top: 'mAP_Ped'
-  top: 'mAP_Cyc'
-  top: 'mAP_Car'
-  bottom: 'bbox_list'
-  bottom: 'gt_boxes'
-  bottom: 'image'
-  bottom: 'im_info'
-  python_param {
-      module: 'eval.detectnet'
-      layer: 'EvalLayer'
-      # parameters (default)
-      #   - DIFFICULTY = {'easy': 0, 'moderate': 1, 'hard': 2}
-      #   - MIN_HEIGHT = (40, 25, 25)
-      #   - MAX_OCCLUSION = (0, 1, 2)
-      #   - MAX_TRANCATION = (0.15, 0.3, 0.5)
-      #   - CLASSES = {'Car': 0, 'Pedestrian': 1, 'Cyclist': 2}
-      #   - NEIGHBOR_CLASSES = {'Car': ['Van'], 'Pedestrian': ['Person_sitting'], 'Cyclist': []]}
-      #   - MIN_OVERLAP = (0.7, 0.5, 0.5)
-      #   - N_SAMPLE_PTS = 41
-      # Ex) param_str : "{MIN_OVERLAP: (0.7, 0.5, 0.5)}
-      param_str : "{}"
-  }
-  include: { phase: TEST stage: "val" }
-}
+#layer {
+#  type: 'Python'
+#  name: 'mAP'    
+#  top: 'mAP_Ped'
+#  top: 'mAP_Cyc'
+#  top: 'mAP_Car'
+#  bottom: 'bbox_list'
+#  bottom: 'gt_boxes'
+#  bottom: 'image'
+#  bottom: 'im_info'
+#  python_param {
+#      module: 'eval.detectnet'
+#      layer: 'EvalLayer'
+#      # parameters (default)
+#      #   - DIFFICULTY = {'easy': 0, 'moderate': 1, 'hard': 2}
+#      #   - MIN_HEIGHT = (40, 25, 25)
+#      #   - MAX_OCCLUSION = (0, 1, 2)
+#      #   - MAX_TRANCATION = (0.15, 0.3, 0.5)
+#      #   - CLASSES = {'Car': 0, 'Pedestrian': 1, 'Cyclist': 2}
+#      #   - NEIGHBOR_CLASSES = {'Car': ['Van'], 'Pedestrian': ['Person_sitting'], 'Cyclist': []]}
+#      #   - MIN_OVERLAP = (0.7, 0.5, 0.5)
+#      #   - N_SAMPLE_PTS = 41
+#      # Ex) param_str : "{MIN_OVERLAP: (0.7, 0.5, 0.5)}
+#      param_str : "{}"
+#  }
+#  include: { phase: TEST stage: "val" }
+#}

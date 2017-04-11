@@ -12,8 +12,8 @@ from fast_rcnn.config import cfg
 import numpy as np
 import numpy.random as npr
 from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x, kitti_kmeans_anchors_1x, kitti_kmeans_anchors_4x, kitti_kmeans_anchors_8x
-from utils.cython_bbox import bbox_overlaps
-from fast_rcnn.bbox_transform import bbox_transform
+from utils.cython_bbox import bbox_overlaps, bbox_intersections
+from fast_rcnn.bbox_transform import bbox_transform, bbox_transform_inv
 
 DEBUG = False
 
@@ -28,13 +28,13 @@ class AnchorTargetLayer(caffe.Layer):
         
 
         if cfg.NET.KMEANS_ANCHOR:
-            if cfg.TRAIN.SCALES[0] == 375:
+            if cfg.NET.ANCHOR_BASE == 1:
                 self._anchors = kitti_kmeans_anchors_1x(cfg.NET.NUM_ANCHORS)
-            elif cfg.TRAIN.SCALES[0] == 755:
+            elif cfg.NET.ANCHOR_BASE == 2:
                 self._anchors = kitti_kmeans_anchors_2x(cfg.NET.NUM_ANCHORS)
-            elif cfg.TRAIN.SCALES[0] == 1510:
+            elif cfg.NET.ANCHOR_BASE == 3:
                 self._anchors = kitti_kmeans_anchors_4x(cfg.NET.NUM_ANCHORS)
-            elif cfg.TRAIN.SCALES[0] == 3020:
+            elif cfg.NET.ANCHOR_BASE == 4:
                 self._anchors = kitti_kmeans_anchors_8x(cfg.NET.NUM_ANCHORS)
             else:
                 raise NotImplementedError
@@ -55,20 +55,20 @@ class AnchorTargetLayer(caffe.Layer):
 
         self._feat_stride = layer_params['feat_stride']
 
-        if DEBUG:
-            print 'anchors:'
-            print self._anchors
-            print 'anchor shapes:'
-            print np.hstack((
-                self._anchors[:, 2::4] - self._anchors[:, 0::4],
-                self._anchors[:, 3::4] - self._anchors[:, 1::4],
-            ))
-            self._counts = cfg.EPS
-            self._sums = np.zeros((1, 4))
-            self._squared_sums = np.zeros((1, 4))
-            self._fg_sum = 0
-            self._bg_sum = 0
-            self._count = 0
+        # if DEBUG:
+        #     print 'anchors:'
+        #     print self._anchors
+        #     print 'anchor shapes:'
+        #     print np.hstack((
+        #         self._anchors[:, 2::4] - self._anchors[:, 0::4],
+        #         self._anchors[:, 3::4] - self._anchors[:, 1::4],
+        #     ))
+        #     self._counts = cfg.EPS
+        #     self._sums = np.zeros((1, 4))
+        #     self._squared_sums = np.zeros((1, 4))
+        #     self._fg_sum = 0
+        #     self._bg_sum = 0
+        #     self._count = 0
 
         # allow boxes to sit over the edge by a small amount
         self._allowed_border = layer_params.get('allowed_border', 0)
@@ -107,13 +107,13 @@ class AnchorTargetLayer(caffe.Layer):
         # im_info
         im_info = bottom[2].data[0, :]
 
-        if DEBUG:
-            print ''
-            print 'im_size: ({}, {})'.format(im_info[0], im_info[1])
-            print 'scale: {}'.format(im_info[2])
-            print 'height, width: ({}, {})'.format(height, width)
-            print 'rpn: gt_boxes.shape', gt_boxes.shape
-            print 'rpn: gt_boxes', gt_boxes
+        # if DEBUG:
+        #     print ''
+        #     print 'im_size: ({}, {})'.format(im_info[0], im_info[1])
+        #     print 'scale: {}'.format(im_info[2])
+        #     print 'height, width: ({}, {})'.format(height, width)
+        #     print 'rpn: gt_boxes.shape', gt_boxes.shape
+        #     print 'rpn: gt_boxes', gt_boxes
 
         # 1. Generate proposals from bbox deltas and shifted anchors
         shift_x = np.arange(0, width) * self._feat_stride
@@ -140,14 +140,14 @@ class AnchorTargetLayer(caffe.Layer):
             (all_anchors[:, 3] < im_info[0] + self._allowed_border)    # height
         )[0]
 
-        if DEBUG:
-            print 'total_anchors', total_anchors
-            print 'inds_inside', len(inds_inside)
+        # if DEBUG:
+        #     print 'total_anchors', total_anchors
+        #     print 'inds_inside', len(inds_inside)
 
         # keep only inside anchors
         anchors = all_anchors[inds_inside, :]
-        if DEBUG:
-            print 'anchors.shape', anchors.shape
+        # if DEBUG:
+        #     print 'anchors.shape', anchors.shape
 
         # label: 1 is positive, 0 is negative, -1 is dont care
         labels = np.empty((len(inds_inside), ), dtype=np.float32)
@@ -182,9 +182,23 @@ class AnchorTargetLayer(caffe.Layer):
         ### Handle objects that will be ignored in optimization process
         # ignIdx = np.where( gt_boxes[ argmax_overlaps, -1 ] == 4 )        
         # labels[ignIdx] = -1
-        if np.any( gt_boxes[ argmax_overlaps, 4 ] == 4 ):      # __background__, Ped, Cyc, Car        
-            import ipdb
-            ipdb.set_trace()            
+
+        # imdb._class_to_ind[ 'Ignore' ] == 4
+        # dontcare_indices = np.where( gt_boxes[:, 4] == -1 )
+        dontcare_indices = np.where( gt_boxes[:, 4] == 4 )[0]
+
+        if len(dontcare_indices) > 0:      # __background__, Ped, Cyc, Car        
+                    
+            dontcare_areas = gt_boxes[ dontcare_indices, :4 ]
+
+            # intersec shape is D x A
+            intersecs = bbox_intersections(
+                np.ascontiguousarray(dontcare_areas, dtype=np.float),  # D x 4
+                np.ascontiguousarray(anchors, dtype=np.float)  # A x 4
+            )
+            intersecs_ = intersecs.sum(axis=0)  # A x 1
+            labels[ intersecs_ > cfg.TRAIN.DONTCARE_AREA_INTERSECTION_HI ] = -1
+
         # labels[ gt_boxes[ argmax_overlaps, -1 ] == 4 ] = -1
 
         # subsample positive labels if we have too many
@@ -228,15 +242,109 @@ class AnchorTargetLayer(caffe.Layer):
         bbox_outside_weights[labels == 0, :] = negative_weights
 
         if DEBUG:
-            self._sums += bbox_targets[labels == 1, :].sum(axis=0)
-            self._squared_sums += (bbox_targets[labels == 1, :] ** 2).sum(axis=0)
-            self._counts += np.sum(labels == 1)
-            means = self._sums / self._counts
-            stds = np.sqrt(self._squared_sums / self._counts - means ** 2)
-            print 'means:'
-            print means
-            print 'stdevs:'
-            print stds
+
+            import matplotlib.pyplot as plt
+            image = ( bottom[3].data[0, :].transpose((1,2,0)) + cfg.PIXEL_MEANS ).astype(np.uint8)
+            plt.figure(2)
+            plt.clf()
+            plt.imshow(image[:,:,(2,1,0)])            
+            axe = plt.gca()
+            plt.axis('off')
+
+            try:
+                import seaborn as sns
+                clrs = sns.color_palette("Set2", 5)
+                
+                # pos = np.where( labels == 1 )[0]            
+                # boxes = bbox_transform_inv( anchors, bbox_targets )
+                for lbl, box in zip(labels[labels == 1], anchors[labels == 1,:]):
+                    clr = clrs[int(lbl)]
+
+                    rect = plt.Rectangle( (box[0], box[1]), box[2]-box[0], box[3]-box[1],
+                        fill=False, edgecolor=clrs[int(lbl)], linewidth=1, label='%d'%int(lbl))
+                    
+                    axe.add_patch(rect)
+                    # axe.text( box[0], box[1]-2, '%d'%lbl, 
+                    #     bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='white')
+
+                plt.savefig('anchor_target_pos.jpg', dpi=200)
+
+                plt.figure(3)
+                plt.clf()
+                plt.imshow(image[:,:,(2,1,0)])            
+                axe = plt.gca()
+                plt.axis('off')
+
+                # ign = np.where( labels == -1 )[0]
+                # boxes_ign = bbox_transform_inv( anchors, bbox_targets[labels == -1,:] )
+                for lbl, box in zip(labels[labels == -1], anchors[labels == -1,:]):
+                    clr = clrs[int(lbl)]
+
+                    rect = plt.Rectangle( (box[0], box[1]), box[2]-box[0], box[3]-box[1],
+                        fill=False, edgecolor=clrs[int(lbl)], linewidth=1, label='%d'%int(lbl))
+                    
+                    axe.add_patch(rect)
+                    # axe.text( box[0], box[1]-2, '%d'%lbl, 
+                    #     bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='white')
+                
+                plt.title('image size: %d x %d' % (image.shape[0], image.shape[1]))
+
+                plt.savefig('anchor_target_ign.jpg', dpi=200)
+
+
+                plt.figure(4)
+                plt.clf()
+                plt.imshow(image[:,:,(2,1,0)])            
+                axe = plt.gca()
+                plt.axis('off')
+
+                # ign = np.where( labels == -1 )[0]
+                # boxes_ign = bbox_transform_inv( anchors, bbox_targets[labels == -1,:] )
+                boxes = bbox_transform_inv( anchors, bbox_targets )
+                for lbl, box in zip(labels[labels == -1], boxes[labels == -1,:]):
+                    clr = clrs[int(lbl)]
+
+                    rect = plt.Rectangle( (box[0], box[1]), box[2]-box[0], box[3]-box[1],
+                        fill=False, edgecolor=clrs[int(lbl)], linewidth=1, label='%d'%int(lbl))
+                    
+                    axe.add_patch(rect)
+
+                for lbl, box in zip(labels[labels == 1], boxes[labels == 1,:]):
+                    clr = clrs[int(lbl)]
+
+                    rect = plt.Rectangle( (box[0], box[1]), box[2]-box[0], box[3]-box[1],
+                        fill=True, facecolor=clrs[int(lbl)], edgecolor=clrs[int(lbl)], alpha=0.2, linewidth=1, label='%d'%int(lbl))
+                    
+                    axe.add_patch(rect)
+                    # axe.text( box[0], box[1]-2, '%d'%lbl, 
+                    #     bbox=dict(facecolor=clr, alpha=0.5), fontsize=14, color='white')
+                
+                plt.legend()
+                plt.title('image size: %d x %d' % (image.shape[0], image.shape[1]))
+
+                plt.savefig('anchor_target_all.jpg', dpi=200)
+                # plt.ion()
+                # plt.pause(1)
+                # plt.show()
+
+
+                import ipdb
+                ipdb.set_trace()
+
+            except:
+                print '[Error]'
+                import ipdb
+                ipdb.set_trace()            
+
+            # self._sums += bbox_targets[labels == 1, :].sum(axis=0)
+            # self._squared_sums += (bbox_targets[labels == 1, :] ** 2).sum(axis=0)
+            # self._counts += np.sum(labels == 1)
+            # means = self._sums / self._counts
+            # stds = np.sqrt(self._squared_sums / self._counts - means ** 2)
+            # print 'means:'
+            # print means
+            # print 'stdevs:'
+            # print stds
 
         # map up to original set of anchors
         labels = _unmap(labels, total_anchors, inds_inside, fill=-1)
@@ -244,15 +352,15 @@ class AnchorTargetLayer(caffe.Layer):
         bbox_inside_weights = _unmap(bbox_inside_weights, total_anchors, inds_inside, fill=0)
         bbox_outside_weights = _unmap(bbox_outside_weights, total_anchors, inds_inside, fill=0)
 
-        if DEBUG:
-            print 'rpn: max max_overlap', np.max(max_overlaps)
-            print 'rpn: num_positive', np.sum(labels == 1)
-            print 'rpn: num_negative', np.sum(labels == 0)
-            self._fg_sum += np.sum(labels == 1)
-            self._bg_sum += np.sum(labels == 0)
-            self._count += 1
-            print 'rpn: num_positive avg', self._fg_sum / self._count
-            print 'rpn: num_negative avg', self._bg_sum / self._count
+        # if DEBUG:
+        #     print 'rpn: max max_overlap', np.max(max_overlaps)
+        #     print 'rpn: num_positive', np.sum(labels == 1)
+        #     print 'rpn: num_negative', np.sum(labels == 0)
+        #     self._fg_sum += np.sum(labels == 1)
+        #     self._bg_sum += np.sum(labels == 0)
+        #     self._count += 1
+        #     print 'rpn: num_positive avg', self._fg_sum / self._count
+        #     print 'rpn: num_negative avg', self._bg_sum / self._count
 
         # labels
         labels = labels.reshape((1, height, width, A)).transpose(0, 3, 1, 2)
