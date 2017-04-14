@@ -123,10 +123,12 @@ def _get_bbox_regression_labels(bbox_target_data, num_classes):
     bbox_targets = np.zeros((clss.size, 4 * num_classes), dtype=np.float32)
     bbox_inside_weights = np.zeros(bbox_targets.shape, dtype=np.float32)
     inds = np.where(clss > 0)[0]
+
     for ind in inds:
         cls = clss[ind]
         
-        if cls == 4: continue   # ignore. 
+        #if cls == 4: continue   # ignore. 
+        if cls == 3: continue   # ignore. 
 
         start = 4 * cls
         end = start + 4
@@ -163,6 +165,10 @@ def _sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num_clas
     max_overlaps = overlaps.max(axis=1)
     labels = gt_boxes[gt_assignment, 4]
 
+    if any( labels > 3 ):
+        import ipdb
+        ipdb.set_trace()
+
     # Select foreground RoIs as those with >= FG_THRESH overlap
     fg_inds = np.where(max_overlaps >= cfg.TRAIN.FG_THRESH)[0]
     # Guard against the case when an image has fewer than fg_rois_per_image
@@ -198,6 +204,7 @@ def _sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num_clas
         _get_bbox_regression_labels(bbox_target_data, num_classes)
 
     # imdb._class_to_ind[ 'Ignore' ] == 4
-    labels[ labels == 4 ] = -1
+    #labels[ labels == 4 ] = -1
+    labels[ labels == 3 ] = -1
 
     return labels, rois, bbox_targets, bbox_inside_weights

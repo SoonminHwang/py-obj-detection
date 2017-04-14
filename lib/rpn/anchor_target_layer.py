@@ -11,7 +11,7 @@ import yaml
 from fast_rcnn.config import cfg
 import numpy as np
 import numpy.random as npr
-from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x, kitti_kmeans_anchors_1x, kitti_kmeans_anchors_4x, kitti_kmeans_anchors_8x
+from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x, kitti_kmeans_anchors_1x, kitti_kmeans_anchors_4x, kitti_kmeans_anchors_8x, kitti_kmeans_anchors_ped_cyc_2x
 from utils.cython_bbox import bbox_overlaps, bbox_intersections
 from fast_rcnn.bbox_transform import bbox_transform, bbox_transform_inv
 
@@ -36,6 +36,8 @@ class AnchorTargetLayer(caffe.Layer):
                 self._anchors = kitti_kmeans_anchors_4x(cfg.NET.NUM_ANCHORS)
             elif cfg.NET.ANCHOR_BASE == 4:
                 self._anchors = kitti_kmeans_anchors_8x(cfg.NET.NUM_ANCHORS)
+            elif cfg.NET.ANCHOR_BASE == 5:
+                self._anchors = kitti_kmeans_anchors_ped_cyc_2x(cfg.NET.NUM_ANCHORS)
             else:
                 raise NotImplementedError
         else:
@@ -185,7 +187,9 @@ class AnchorTargetLayer(caffe.Layer):
 
         # imdb._class_to_ind[ 'Ignore' ] == 4
         # dontcare_indices = np.where( gt_boxes[:, 4] == -1 )
-        dontcare_indices = np.where( gt_boxes[:, 4] == 4 )[0]
+        
+        #dontcare_indices = np.where( gt_boxes[:, 4] == 4 )[0]
+        dontcare_indices = np.where( gt_boxes[:, 4] == 3 )[0]
 
         if len(dontcare_indices) > 0:      # __background__, Ped, Cyc, Car        
                     

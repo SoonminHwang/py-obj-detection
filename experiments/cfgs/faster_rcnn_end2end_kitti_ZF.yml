@@ -10,7 +10,7 @@ INPUT: ['image']
 #INPUT: ['image', 'depth']
 
 SOLVER:
-  BASE_LR: 0.0004
+  BASE_LR: 0.0005
   #BASE_LR: 0.002
 
   DISPLAY: 20

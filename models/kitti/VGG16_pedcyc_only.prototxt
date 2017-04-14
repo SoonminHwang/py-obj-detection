@@ -1,15 +1,15 @@
-name: "VGG16_Depth2"
+name: "VGG16_RGB_PedCyc"
 layer {
   name: 'input-data'
   type: 'Python'
-  top: 'image'
-  top: 'depth'
+  top: 'image'  
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
     module: 'roi_data_layer.layer'
     layer: 'RoIDataLayer'
-    param_str: "'num_classes': 4"
+    #param_str: "'num_classes': 4"
+    param_str: "'num_classes': 3"
   }
   include { phase: TRAIN }
 }
@@ -17,14 +17,14 @@ layer {
 layer {
   name: 'input-data'
   type: 'Python'
-  top: 'image'
-  top: 'depth'
+  top: 'image'  
   top: 'im_info'
   top: 'gt_boxes'
   python_param {
     module: 'roi_data_layer.layer'
     layer: 'RoIDataLayer'
-    param_str: "'num_classes': 4"
+    #param_str: "'num_classes': 4"
+    param_str: "'num_classes': 3"
   }
   include: { phase: TEST stage: "val" }
 }
@@ -33,37 +33,32 @@ layer {
 layer {
   name: 'input-data'
   type: 'Input'
-  top: 'image'
-  top: 'depth'
+  top: 'image'  
   top: 'im_info'
   input_param { 
-    shape { dim: 1      dim: 3      dim: 375      dim: 1242 }
-    shape { dim: 1      dim: 1      dim: 375      dim: 1242 }
+    shape { dim: 1      dim: 3      dim: 375      dim: 1242 }    
     shape { dim: 1      dim: 3 }  
   }
 
   include: { phase: TEST not_stage: "val" }
 }
 
-#========= conv1-conv5 for image ============
+#========= conv1-conv5 ============
 
 layer {
   name: "conv1_1"
   type: "Convolution"
   bottom: "image"
   top: "conv1_1"
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
+  param {    lr_mult: 1      }
+  param {    lr_mult: 2      }
   convolution_param {
     num_output: 64
     pad: 1
     kernel_size: 3
+
+    weight_filler { type: "gaussian" std: 0.1 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -77,18 +72,15 @@ layer {
   type: "Convolution"
   bottom: "conv1_1"
   top: "conv1_2"
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
+  param {    lr_mult: 1      }
+  param {    lr_mult: 2      }
   convolution_param {
     num_output: 64
     pad: 1
     kernel_size: 3
+
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -113,18 +105,15 @@ layer {
   type: "Convolution"
   bottom: "pool1"
   top: "conv2_1"
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
+  param {    lr_mult: 1      }
+  param {    lr_mult: 2      }
   convolution_param {
     num_output: 128
     pad: 1
     kernel_size: 3
+
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -137,19 +126,16 @@ layer {
   name: "conv2_2"
   type: "Convolution"
   bottom: "conv2_1"
-  top: "conv2_2"
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
-  param {
-    lr_mult: 0
-    decay_mult: 0
-  }
+  top: "conv2_2"    
+  param {    lr_mult: 1      }
+  param {    lr_mult: 2      }
   convolution_param {
     num_output: 128
     pad: 1
     kernel_size: 3
+
+    weight_filler { type: "gaussian" std: 0.01 }
+    bias_filler { type: "constant" value: 0 }
   }
 }
 layer {
@@ -170,156 +156,10 @@ layer {
   }
 }
 
-#========= conv1-conv5 for image ============
-
-layer {
-  name: "conv1_1_d"
-  type: "Convolution"
-  bottom: "depth"
-  top: "conv1_1_d"
-  param {    lr_mult: 1      }
-  param {    lr_mult: 2      }
-  convolution_param {
-    num_output: 64
-    pad: 1
-    kernel_size: 3
-
-    weight_filler { type: "gaussian" std: 0.1 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-layer {
-  name: "relu1_1_d"
-  type: "ReLU"
-  bottom: "conv1_1_d"
-  top: "conv1_1_d"
-}
-layer {
-  name: "conv1_2_d"
-  type: "Convolution"
-  bottom: "conv1_1_d"
-  top: "conv1_2_d"
-  param {    lr_mult: 1      }
-  param {    lr_mult: 2      }
-  convolution_param {
-    num_output: 64
-    pad: 1
-    kernel_size: 3
-
-    weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-layer {
-  name: "relu1_2_d"
-  type: "ReLU"
-  bottom: "conv1_2_d"
-  top: "conv1_2_d"
-}
-layer {
-  name: "pool1_d"
-  type: "Pooling"
-  bottom: "conv1_2_d"
-  top: "pool1_d"
-  pooling_param {
-    pool: MAX
-    kernel_size: 2
-    stride: 2
-  }
-}
-layer {
-  name: "conv2_1_d"
-  type: "Convolution"
-  bottom: "pool1_d"
-  top: "conv2_1_d"
-  param {    lr_mult: 1      }
-  param {    lr_mult: 2      }
-  convolution_param {
-    num_output: 128
-    pad: 1
-    kernel_size: 3
-
-    weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-layer {
-  name: "relu2_1_d"
-  type: "ReLU"
-  bottom: "conv2_1_d"
-  top: "conv2_1_d"
-}
-layer {
-  name: "conv2_2_d"
-  type: "Convolution"
-  bottom: "conv2_1_d"
-  top: "conv2_2_d"    
-  param {    lr_mult: 1      }
-  param {    lr_mult: 2      }
-  convolution_param {
-    num_output: 128
-    pad: 1
-    kernel_size: 3
-
-    weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-layer {
-  name: "relu2_2_d"
-  type: "ReLU"
-  bottom: "conv2_2_d"
-  top: "conv2_2_d"
-}
-layer {
-  name: "pool2_d"
-  type: "Pooling"
-  bottom: "conv2_2_d"
-  top: "pool2_d"
-  pooling_param {
-    pool: MAX
-    kernel_size: 2
-    stride: 2
-  }
-}
-
-
-#========= Concat pool2 + pool2_d ============
-layer {
-  name: "concat2"
-  type: "Concat"
-  bottom: "pool2"
-  bottom: "pool2_d"
-  top: "concat2"
-
-  concat_param {
-    axis: 1
-  }
-}
-
-layer {
-  name: "concat2_conv"
-  type: "Convolution"
-  bottom: "concat2"
-  top: "concat2_conv"
-  param { lr_mult: 1.0 }
-  param { lr_mult: 2.0 }
-  convolution_param {
-    num_output: 128   # (128+128)-dim --> 128-dim
-    kernel_size: 1
-    pad: 0
-    stride: 1
-
-    weight_filler { type: "gaussian" std: 0.01 }
-    bias_filler { type: "constant" value: 0 }
-  }
-}
-
-#========= conv3-conv5 ============
 layer {
   name: "conv3_1"
   type: "Convolution"
-  bottom: "concat2_conv"
+  bottom: "pool2"
   top: "conv3_1"
   param {
     lr_mult: 1
@@ -577,7 +417,8 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   convolution_param {
-    num_output: 40   # 2(bg/fg) * 20(anchors)
+    #num_output: 40   # 2(bg/fg) * 20(anchors)
+    num_output: 20   # 2(bg/fg) * 10(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -592,7 +433,8 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   convolution_param {
-    num_output: 80   # 4 * 20(anchors)
+    #num_output: 80   # 4 * 20(anchors)
+    num_output: 40   # 4 * 10(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -675,7 +517,8 @@ layer {
   type: 'Reshape'
   bottom: 'rpn_cls_prob'
   top: 'rpn_cls_prob_reshape'
-  reshape_param { shape { dim: 0 dim: 40 dim: -1 dim: 0 } }   # 2 x 6
+  #reshape_param { shape { dim: 0 dim: 40 dim: -1 dim: 0 } }   # 2 x 6
+  reshape_param { shape { dim: 0 dim: 20 dim: -1 dim: 0 } }   # 2 x 6
 }
 
 layer {
@@ -725,7 +568,8 @@ layer {
   python_param {
     module: 'rpn.proposal_target_layer'
     layer: 'ProposalTargetLayer'
-    param_str: "'num_classes': 4"
+    #param_str: "'num_classes': 4"
+    param_str: "'num_classes': 3"
   }
   include { phase: TRAIN }
   include { phase: TEST stage: "val" }
@@ -817,7 +661,8 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 4
+    #num_output: 4
+    num_output: 3
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -840,7 +685,8 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 16    # 4 * 4 -> 9 x 4
+    #num_output: 16    # 4 * 4 -> 9 x 4
+    num_output: 12    # 4 * 4 -> 9 x 4
     weight_filler {
       type: "gaussian"
       std: 0.001

@@ -9,7 +9,7 @@ import caffe
 import numpy as np
 import yaml
 from fast_rcnn.config import cfg
-from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x, kitti_kmeans_anchors_1x, kitti_kmeans_anchors_4x, kitti_kmeans_anchors_8x
+from generate_anchors import generate_anchors, kitti_kmeans_anchors_2x, kitti_kmeans_anchors_1x, kitti_kmeans_anchors_4x, kitti_kmeans_anchors_8x, kitti_kmeans_anchors_ped_cyc_2x
 from fast_rcnn.bbox_transform import bbox_transform_inv, clip_boxes
 from fast_rcnn.nms_wrapper import nms
 
@@ -37,6 +37,8 @@ class ProposalLayer(caffe.Layer):
                 self._anchors = kitti_kmeans_anchors_4x(cfg.NET.NUM_ANCHORS)
             elif cfg.NET.ANCHOR_BASE == 4:
                 self._anchors = kitti_kmeans_anchors_8x(cfg.NET.NUM_ANCHORS)
+            elif cfg.NET.ANCHOR_BASE == 5:
+                self._anchors = kitti_kmeans_anchors_ped_cyc_2x(cfg.NET.NUM_ANCHORS)
             else:
                 raise NotImplementedError      
 

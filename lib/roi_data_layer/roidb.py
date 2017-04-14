@@ -51,12 +51,17 @@ def prepare_roidb(imdb):
         roidb[i]['max_classes'] = max_classes
         roidb[i]['max_overlaps'] = max_overlaps
         # sanity checks
-        # max overlap of 0 => class should be zero (background)
-        zero_inds = np.where(max_overlaps == 0)[0]
-        assert all(max_classes[zero_inds] == 0)
-        # max overlap > 0 => class should not be zero (must be a fg class)
-        nonzero_inds = np.where(max_overlaps > 0)[0]
-        assert all(max_classes[nonzero_inds] != 0)
+        try:
+            # max overlap of 0 => class should be zero (background)
+            zero_inds = np.where(max_overlaps == 0)[0]
+            assert all(max_classes[zero_inds] == 0)
+            # max overlap > 0 => class should not be zero (must be a fg class)
+            nonzero_inds = np.where(max_overlaps > 0)[0]
+            assert all(max_classes[nonzero_inds] != 0)
+        except:
+            import ipdb
+            ipdb.set_trace()
+            
 
 def add_bbox_regression_targets(roidb):
     """Add information needed to train bounding-box regressors."""

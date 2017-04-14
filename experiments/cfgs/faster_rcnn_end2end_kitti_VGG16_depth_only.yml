@@ -1,4 +1,4 @@
-EXP_DIR: depth2_person_cyclist_only
+EXP_DIR: depth_only_person_cyclist_only
 #EXP_DIR: scale2x_PedCyc2x_50k120k_person_sitting_van_truck_imdb_hRng10_occ012_trunc0.5
 #EXP_DIR: scale2x_kmeans70_flip_crop_gamma_stepsize_50k_maxiter_70k_person_sitting_van_truck_imdb_hRng20_occ012_trunc0.5
 #EXP_DIR: faster_rcnn_end2end
@@ -28,8 +28,10 @@ SOLVER:
 
 NET:
   # NUM_CLASSES: 4
+  # NUM_ANCHORS: 20
   NUM_CLASSES: 3
-  NUM_ANCHORS: 20
+  NUM_ANCHORS: 10
+  ANCHOR_BASE: 5    # ped-cyc anchor
   KMEANS_ANCHOR: True
 
 TRAIN:

@@ -64,17 +64,9 @@ class kitti(imdb):
         # ['Van', 'Truck', 'Person_sitting'] classes are marked as 
         #   ['Car', Car', 'Pedestrian'] respectively for convenience      
         
-        categories = ['Pedestrian', 'Cyclist', 'Car', 'Ignore']       
-        self._cat_maps = {  'Pedestrian': categories[0],
-                            'Person_sitting': categories[0],
-                              'Cyclist': categories[1],
-                              'Car': categories[2],         
-                              'Van': categories[2],         
-                              'Truck': categories[-1],       # Exclude!
-                              'Tram': categories[-1],
-                              'Misc': categories[-1],
-                              'DontCare': categories[-1] }
-
+        #categories = ['Pedestrian', 'Cyclist', 'Car', 'Ignore']       
+        categories = ['Pedestrian', 'Cyclist', 'Ignore']
+        
         # self._cat_maps = {  'Pedestrian': categories[0],
         #                     'Person_sitting': categories[0],
         #                       'Cyclist': categories[1],
@@ -86,6 +78,17 @@ class kitti(imdb):
         #                       'DontCare': categories[3] }
 
         self._classes = tuple(['__background__'] + categories)
+
+        self._cat_maps = {  'Pedestrian': self._classes[1],
+                            'Person_sitting': self._classes[3],
+                              'Cyclist': self._classes[2],
+                              'Car': self._classes[0],         
+                              'Van': self._classes[0],
+                              'Truck': self._classes[0],
+                              'Tram': self._classes[0],
+                              'Misc': self._classes[0],
+                              'DontCare': self._classes[3] }
+
         # self._raw_cat_ids = self._KITTI.getCatIds(catNms=categories)
 
         # cats = self._KITTI.loadCats(self._raw_cat_ids)
@@ -443,7 +446,18 @@ class kitti(imdb):
             if obj['trunc'] < tRng[0] or obj['trunc'] > tRng[1]:
                 cls = self._class_to_ind['Ignore']
 
+
+            # Ignore annotations
+            if cls == self._class_to_ind[ self._classes[0] ]:
+                continue
+
+            if cls > 3:
+                import ipdb
+                ipdb.set_trace()
+                
+
             obj['class'] = cls
+
 
             # All valid annotations must satisfy below condition
             # if x2 >= x1 and y2 >= y1:
@@ -452,8 +466,11 @@ class kitti(imdb):
                 obj['clean_bbox'] = [x1, y1, x2, y2]
                 valid_objs.append(obj)
 
-        objs = valid_objs            
-        num_objs = len(objs)        
+        
+        num_objs = len(valid_objs)
+        # print( 'Loaded objects: %d -> %d' % (len(obj), num_objs))
+
+        objs = valid_objs
 
         # In traffic scene datasets (e.g. KITTI, KAIST),
         #   some images may not contain any target object instance.
@@ -501,7 +518,8 @@ class kitti(imdb):
     def append_ped_cyc_images(self):
         roidb_old = self.roidb[:]
 
-        ped_ind, cyc_ind, car_ind = self._class_to_ind['Pedestrian'], self._class_to_ind['Cyclist'], self._class_to_ind['Car']
+        #ped_ind, cyc_ind, car_ind = self._class_to_ind['Pedestrian'], self._class_to_ind['Cyclist'], self._class_to_ind['Car']
+        ped_ind, cyc_ind = self._class_to_ind['Pedestrian'], self._class_to_ind['Cyclist']
         
         ratios_ped = 6
         ratios_cyc = 17
@@ -695,8 +713,8 @@ def get_assigned_anchor_index(anchors, boxes, imgsize, stride):
 
 def gen_anchors(roidb, num_anchors, valid_cls):
                  
-    max_size = cfg.TRAIN.MAX_SIZE
-    target_size = cfg.TRAIN.SCALES[0]
+    max_size = cfg.TEST.MAX_SIZE
+    target_size = cfg.TEST.SCALES[0]
     im_size_min, im_size_max = (375, 1242)
     im_scale = float(target_size) / float(im_size_min)
     # Prevent the biggest axis from being more than MAX_SIZE
@@ -745,8 +763,9 @@ if __name__ == '__main__':
     # imdb = kitti('train', '2012')
     imdb = kitti('trainval', '2012')
 
+    # imdb.append_ped_cyc_images()
     # Apply data augmentation
-    imdb.append_flipped_images()        
+    # imdb.append_flipped_images()        
     # imdb.append_crop_resize_images()    
     # imdb.append_photometric_transformed_images()        
 
@@ -754,14 +773,15 @@ if __name__ == '__main__':
 
     plt.ion()
         
-    num_anchors = 20
+    # num_anchors = 20
+    num_anchors = 10
 
     # anchors_person = gen_anchors(imdb.roidb, 10, [1])
     # anchors_cyclist = gen_anchors(imdb.roidb, 10, [2])
     # anchors_car = gen_anchors(imdb.roidb, 60, [3])
     # anchors = np.vstack( (anchors_person, anchors_cyclist, anchors_car) )    
     
-    anchors = gen_anchors(imdb.roidb, num_anchors, [1, 2, 3])
+    anchors = gen_anchors(imdb.roidb, num_anchors, [1, 2])
     
     
 

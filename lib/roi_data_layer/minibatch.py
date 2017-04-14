@@ -58,7 +58,7 @@ def get_minibatch(roidb, num_classes, randScale):
 
         ignore = np.where( gt_boxes[:,3] - gt_boxes[:,1] + 1 < cfg.TRAIN.MIN_HEIGHT )
         if len(ignore) > 0:
-            gt_boxes[ignore, 4] = 4     # imdb._class_to_ind[ 'Ignore' ] == 4
+            gt_boxes[ignore, 4] = 3     # imdb._class_to_ind[ 'Ignore' ] == 4
 
 
         blobs['gt_boxes'] = gt_boxes

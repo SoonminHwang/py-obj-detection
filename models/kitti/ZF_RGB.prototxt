@@ -333,6 +333,23 @@ layer {
     layer: 'ProposalLayer'
     param_str: "'feat_stride': 16"
   }
+  include { phase: TRAIN }
+  include { phase: TEST stage: "val" }
+}
+
+layer {
+  name: 'proposal'
+  type: 'Python'
+  bottom: 'rpn_cls_prob_reshape'
+  bottom: 'rpn_bbox_pred'
+  bottom: 'im_info'
+  top: 'rois'
+  python_param {
+    module: 'rpn.proposal_layer'
+    layer: 'ProposalLayer'
+    param_str: "'feat_stride': 16"
+  }
+  include { phase: TEST not_stage: "val" }
 }
 
 #========= Prepare GT for final loss (train) ============
@@ -352,6 +369,7 @@ layer {
     param_str: "'num_classes': 4"    
   }
   include { phase: TRAIN }
+  include { phase: TEST stage: "val" }
 }
 
 #========= RCNN ============

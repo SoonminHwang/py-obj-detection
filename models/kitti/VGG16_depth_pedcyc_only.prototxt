@@ -1,4 +1,4 @@
-name: "VGG16_Depth2"
+name: "VGG16_Depth2_PedCyc"
 layer {
   name: 'input-data'
   type: 'Python'
@@ -9,7 +9,8 @@ layer {
   python_param {
     module: 'roi_data_layer.layer'
     layer: 'RoIDataLayer'
-    param_str: "'num_classes': 4"
+    #param_str: "'num_classes': 4"
+    param_str: "'num_classes': 3"
   }
   include { phase: TRAIN }
 }
@@ -24,7 +25,8 @@ layer {
   python_param {
     module: 'roi_data_layer.layer'
     layer: 'RoIDataLayer'
-    param_str: "'num_classes': 4"
+    #param_str: "'num_classes': 4"
+    param_str: "'num_classes': 3"
   }
   include: { phase: TEST stage: "val" }
 }
@@ -577,7 +579,8 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   convolution_param {
-    num_output: 40   # 2(bg/fg) * 20(anchors)
+    #num_output: 40   # 2(bg/fg) * 20(anchors)
+    num_output: 20   # 2(bg/fg) * 10(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -592,7 +595,8 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   convolution_param {
-    num_output: 80   # 4 * 20(anchors)
+    #num_output: 80   # 4 * 20(anchors)
+    num_output: 40   # 4 * 10(anchors)
     kernel_size: 1 pad: 0 stride: 1
     weight_filler { type: "gaussian" std: 0.01 }
     bias_filler { type: "constant" value: 0 }
@@ -675,7 +679,8 @@ layer {
   type: 'Reshape'
   bottom: 'rpn_cls_prob'
   top: 'rpn_cls_prob_reshape'
-  reshape_param { shape { dim: 0 dim: 40 dim: -1 dim: 0 } }   # 2 x 6
+  #reshape_param { shape { dim: 0 dim: 40 dim: -1 dim: 0 } }   # 2 x 6
+  reshape_param { shape { dim: 0 dim: 20 dim: -1 dim: 0 } }   # 2 x 6
 }
 
 layer {
@@ -725,7 +730,8 @@ layer {
   python_param {
     module: 'rpn.proposal_target_layer'
     layer: 'ProposalTargetLayer'
-    param_str: "'num_classes': 4"
+    #param_str: "'num_classes': 4"
+    param_str: "'num_classes': 3"
   }
   include { phase: TRAIN }
   include { phase: TEST stage: "val" }
@@ -817,7 +823,8 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 4
+    #num_output: 4
+    num_output: 3
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -840,7 +847,8 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 16    # 4 * 4 -> 9 x 4
+    #num_output: 16    # 4 * 4 -> 9 x 4
+    num_output: 12    # 4 * 4 -> 9 x 4
     weight_filler {
       type: "gaussian"
       std: 0.001

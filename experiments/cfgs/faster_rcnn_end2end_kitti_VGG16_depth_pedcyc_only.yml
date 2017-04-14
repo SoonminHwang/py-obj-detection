@@ -28,8 +28,10 @@ SOLVER:
 
 NET:
   # NUM_CLASSES: 4
+  # NUM_ANCHORS: 20
   NUM_CLASSES: 3
-  NUM_ANCHORS: 20
+  NUM_ANCHORS: 10
+  ANCHOR_BASE: 5    # ped-cyc anchor    
   KMEANS_ANCHOR: True
 
 TRAIN:
